@@ -1,0 +1,235 @@
+4 models found for the face detection and face landmark capturing:
+
+1. Haar Cascades:
+Advantages: Haar cascades are lightweight and offer rapid face detection, making them suitable for real-time applications on resource-constrained devices. 
+PYIMAGESEARCH
+Limitations: They are prone to false positives and generally less accurate compared to modern deep learning models. Additionally, Haar cascades do not inherently provide facial landmarks, which are crucial for your application.
+PYIMAGESEARCH
+
+2. YuNet:
+Advantages: YuNet is a lightweight face detection model optimized for real-time performance. It offers improved accuracy over traditional methods like Haar cascades and can detect facial landmarks.
+Limitations: While more accurate than Haar cascades, YuNet may still fall short in landmark precision compared to more complex models.
+
+3. RetinaFace:
+Advantages: RetinaFace is renowned for its high accuracy in face detection and landmark localization. It employs a single-stage detector, making it efficient and suitable for real-time applications. 
+MEDIUM
+Limitations: While highly accurate, RetinaFace can be computationally intensive, which might be a consideration depending on your deployment environment.
+
+4. MediaPipe Face Detection and Face Landmarker:
+Advantages: Developed by Google, MediaPipe offers lightweight and efficient models for face detection and landmark localization, optimized for mobile and web applications. The Face Detection model is based on BlazeFace, known for its speed and accuracy. The Face Landmarker provides precise facial landmarks, essential for your application.
+Mediapipe provides reliable face detection even under poor lighting conditions.
+GOOGLE AI
+Limitations: While efficient, the accuracy may be slightly lower compared to more complex models like RetinaFace.
+
+conclusion:- 
+	RetinaFace- out as it requires high computational power.
+	Haar Cascades- out because high false positives and lower accuracy compared to modern models. Does not inherently provide face landmarks.
+	Yunet- out because not as accurate in landmark detection as newer solutions like MediaPipe.
+
+Final decision: for face detection and landmarks: mediapipe 
+
+4 models found for face matching:
+
+1. VGG-Face from DeepFace:
+Advantages: VGG-Face is a deep learning model trained for face recognition tasks. It provides high accuracy in face matching and can be adapted for landmark detection.
+Limitations: The model is computationally intensive, which may not align with your requirement for low computational overhead.
+
+2. Face512 from DeepFace:
+Advantages: Face512 is designed for efficient face recognition, offering a balance between accuracy and computational efficiency. It can perform face matching effectively.
+Limitations: While it is optimized for recognition, its performance in landmark detection may not be as robust as specialized models.
+
+3. MixFaceNets
+MixFaceNets are designed for efficiency and high throughput in face verification tasks. They outperform MobileFaceNets under similar computational constraints, achieving 99.60% accuracy on LFW and 97.05% on AgeDB-30. With computational complexity under 500M FLOPs, they offer a balance between performance and resource usage. 
+ARXIV
+
+4. PocketNet
+PocketNet utilizes neural architecture search and multi-step knowledge distillation to create an extremely lightweight face recognition network. With only 0.92 million parameters, PocketNetS-128 delivers competitive results compared to state-of-the-art compact models containing up to 4 million parameters, making it suitable for deployment on devices with limited resources. 
+ARXIV
+
+conclusion:
+	VGG- out as it requires more computational power
+	MixFaceNets- out as it have lower accuracy than FaceNet512
+	PocketNet- out due to lower accuracy
+
+Final decision: using FaceNet512 as its accuracy is highest and it can take easily the input images as numpy array.
+		we can use  MixFaceNets as a option if the computational power exceeds
+
+
+Comparison of Key Metrics:
+
+Model		Face Detection 	Accuracy	Landmark Precision	Recognition Accuracy (LFW)	Computational Demand
+Haar Cascade		85-90%				N/A			N/A				Low
+YuNet			~94%				Moderate		N/A				Moderate
+MediaPipe		~96%				High			N/A				Low
+FaceNet512		N/A				N/A			99.63%				High
+MixFaceNet		N/A				N/A			99.60%				Moderate
+PocketNet		N/A				N/A			99.20%				Very Low
+Improved MobileFaceNet	N/A				N/A			99.60%				Low
+EdgeFace		N/A				N/A			99.73%				Moderate
+
+
+Summary Comparison of Computational Power:
+
+Model		Parameters		FLOPs		CPU Usage	GPU Usage		Inference Latency	Memory (RAM/VRAM)
+FaceNet512	~512 million		2-3 GFLOPs	High load	High (8GB VRAM)		~100-200 ms/image	~6-8 GB VRAM/3-4 GB RAM
+MixFaceNet	~50-70 million		400-600 MFLOPs	Low load	Moderate (1-2 GB VRAM)	~30-50 ms/image		~1-2 GB VRAM/1-2 GB RAM
+
+Objects detection model:-
+Thanks to libraries such as YOLO by Ultralytics, it is fairly easy today to make robust object detection models with as little as a few lines of code. Unfortunately, those solutions are not yet fast enough to work in a web browser on a real-time video stream at 30 frames per second (which is usually considered the real-time limit for video applications) on any device. More often than not, it will run at less than 10 fps on an average mobile device.
+
+The most famous real-time object detection solution on web browser is Google’s MediaPipe. This is a really convenient and versatile solution, as it can work on many devices and platforms easily. But what if you want to make your own solution?
+
+WEBSITE:- https://towardsdatascience.com/blazeface-how-to-run-real-time-object-detection-in-the-browser-66c2ac9acd75
+
+
+Model			Accuracy		Speed (FPS)		Memory Size		CPU Utilization		Notes
+YOLOv8			Very High		High (60+)		Medium			Medium			State-of-the-art YOLO model, great for real-time use.
+YOLOv5	High		High (50+)		Medium			Medium			Balanced 		performance, versatile for many applications.
+YOLOv4-Tiny		Medium			Very High (100+)	Very Low		Low			Optimized for edge devices, lower accuracy.
+YOLO-Nano		Medium			High (60+)		Very Low		Very Low		Lightweight and fast, good for constrained devices.
+EfficientDet		High			Medium (30)		Medium			Medium			Good accuracy-speed balance, supports mobile devices.
+MobileNet SSD		Medium			High (60+)		Very Low		Low			Ideal for mobile/edge with less demanding tasks.
+DETR			Very High		Low (10-20)		High			High			Transformer-based, great accuracy but resource-heavy.
+Faster R-CNN		Very High		Low (5-10)		High			High			Excellent for accuracy-critical tasks, slower.
+NanoDet	Medium		Very High (80+)		Very Low		Very 			Low			Optimized for mobile and embedded systems.
+CenterNet		High			Medium (25-30)		Medium			Medium			Good trade-off between accuracy and speed.
+SSD (Original)		Medium	High (50+)	Low			Low			Popular 		lightweight model with decent accuracy.
+RetinaNet		Very High		Low (10-15)		High			High			Focuses on accurate detection with a slight speed trade-off.
+MediaPipe Object 
+Detection		High			Very High (30+)		Very Low		Very Low		Optimized for web/mobile with pre-trained models.
+
+MediaPipe Objectron and Object Detection:
+Google AI Blog: https://ai.googleblog.com
+MediaPipe Documentation: https://mediapipe.dev
+Performance Benchmarks:
+Zhang, X., et al. (2020). BlazeFace and Objectron Benchmarks for Edge Devices. arXiv.
+TensorFlow Blog: "Deploying Real-Time Object Detection on Mobile Using MediaPipe."
+
+YOLO Models:
+Jocher, G., et al. (2023). YOLO by Ultralytics. Retrieved from https://ultralytics.com
+Redmon, J., & Farhadi, A. (2018). YOLOv4: Optimal Speed and Accuracy of Object Detection. arXiv.
+
+EfficientDet:
+Tan, M., et al. (2020). EfficientDet: Scalable and Efficient Object Detection. arXiv.
+TensorFlow Models GitHub: https://github.com/tensorflow/models
+
+MobileNet SSD:
+Howard, A. G., et al. (2017). MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications. arXiv.
+TFLite Examples: https://www.tensorflow.org/lite/examples/object_detection/overview
+
+DETR:
+Carion, N., et al. (2020). End-to-End Object Detection with Transformers (DETR). arXiv.
+
+NanoDet:
+NanoDet GitHub Repository: https://github.com/RangiLyu/nanodet
+
+Comparison: MediaPipe vs YOLO
+Feature/Aspect			MediaPipe						YOLO
+Real-Time Performance		Excellent: Achieves 30+ FPS even on mobile.		Limited on web browsers/mobile; <10 FPS on average.
+Ease of Deployment		Highly optimized for cross-platform deployment.		Needs GPU for real-time performance on lower devices.
+Accuracy			High for specific tasks (e.g., hands, face).		Higher for general object detection tasks.
+Resource Usage			Low: Optimized for mobile and edge devices.		Medium to High, especially with larger models.
+Flexibility			Focused on specific tasks (pose, face, hands).		General object detection (supports various classes).
+Customization			Limited: Pre-trained solutions.				Fully customizable with custom datasets.
+Integration			Web-friendly (TensorFlow.js, JavaScript).		Requires more setup for web integration.
+
+When to Use MediaPipe
+Real-time performance on low-resource devices: Works exceptionally well in web browsers, embedded systems, or mobile devices.
+Specialized use cases: Face detection, hand tracking, pose estimation, and holistic body tracking.
+Cross-platform deployment: Minimal setup across various environments (mobile, desktop, browser).
+
+When to Use YOLO
+General-purpose object detection: Suitable for detecting a wide variety of objects with custom training.
+Higher accuracy requirements: YOLO excels in object detection benchmarks when computational resources are available.
+GPU support: Great for environments with dedicated GPUs for inference.
+Building Your Own Real-Time Solution
+If you want to create a custom real-time object detection solution for the web or mobile with 30+ FPS, you might combine the best of both worlds:
+
+Start with MediaPipe:
+Use it for optimized preprocessing, pose estimation, or tracking tasks.
+Lightweight and runs on all platforms.
+Integrate with a lightweight model like YOLO-Nano:
+
+For general object detection tasks, use YOLO-Nano or NanoDet.
+Convert the model to TensorFlow.js or TFLite for browser/mobile compatibility.
+Optimize further:
+
+Use quantization (e.g., INT8) to reduce model size and improve speed.
+Leverage WebAssembly (Wasm) or WebGPU for faster computation in browsers.
+
+Conclusion
+MediaPipe is an excellent choice for real-time, web-compatible, and low-resource applications. However, for a fully custom object detection solution with multiple classes, you might consider integrating it with a lightweight YOLO variant or another efficient model.
+
+Performance and Speed:
+Google Research Blog: "MediaPipe for Cross-Platform Real-Time Applications." Retrieved from https://research.google.
+Benchmark comparisons from BlazeFace: Zhang, X., et al. (2020). BlazeFace. arXiv.
+
+YOLO's Limitations in Browsers:
+Ultralytics Forum and Issues: Real-time constraints of YOLO models. https://github.com/ultralytics/yolov5.
+
+MediaPipe Advantages:
+TensorFlow Blog: "Deploying MediaPipe on Web and Mobile." Retrieved from https://blog.tensorflow.org.
+
+
+For your proctoring system, you need an object detection model that is:
+Accurate: To reliably detect objects such as smartphones, notebooks, or papers.
+Fast: To operate in real-time during online exams.
+Lightweight: To minimize resource usage for seamless integration into your website.
+
+Comparison: YOLO vs MediaPipe for Proctoring System
+Feature					YOLO(e.g., YOLOv5/YOLOv8)								MediaPipe Object Detection
+Accuracy		Very High (configurable for specific objects with fine-tuning on custom datasets).	High (sufficient for common objects but may require additional 																	training for niche cases).
+Speed (FPS)		High (60+ on GPUs, 30+ on good CPUs).							High (30+ even on average CPUs).
+Resource Utilization	Medium (needs a GPU for best performance).						Very Low (optimized for CPU and mobile).
+Ease of Integration	Straightforward for Python/Django backends.						Best for web apps; direct browser-based use with WebAssembly (WASM).
+Custom Object Support	Excellent (supports custom training).							Limited; may need additional pipelines for custom objects.
+Use in Web		Requires server-side processing or TensorFlow.js adaptation.				Works natively in-browser with low latency.
+Supported Platforms	Cross-platform but optimized for powerful systems.					Cross-platform, highly optimized for edge devices and web browsers.
+Overall Suitability	Best for high accuracy and complex scenarios.						Best for lightweight, web-first applications.
+
+Recommendation for Your Use Case
+If accuracy is the top priority, go with YOLOv8 or YOLOv5, fine-tuned with a custom dataset containing the specific objects used for cheating. However, you may need to handle server-side processing.
+If low resource usage and in-browser functionality are more important, choose MediaPipe Object Detection for seamless real-time detection on all devices.
+
+Next Steps
+1. Using YOLO
+Steps:
+Use YOLOv8 for object detection.
+Fine-tune it with a custom dataset containing cheating-related objects (e.g., phones, notes, calculators).
+Deploy on your backend and connect it to your website using Django APIs.
+2. Using MediaPipe
+Steps:
+Use MediaPipe Objectron for lightweight object detection.
+If required, extend its detection capabilities by combining it with a pre-trained MobileNet SSD or TensorFlow.js.
+
+Citations
+YOLO Models:
+Jocher, G., et al. (2023). YOLO by Ultralytics. Retrieved from https://ultralytics.com.
+Redmon, J., & Farhadi, A. (2018). YOLOv4: Optimal Speed and Accuracy of Object Detection. arXiv.
+
+MediaPipe Object Detection:
+Google AI Blog: "MediaPipe for Cross-Platform Real-Time Applications." Retrieved from https://ai.googleblog.com.
+MediaPipe Documentation: https://mediapipe.dev.
+
+Proctoring System Considerations:
+Nguyen, D. T., et al. (2022). Automated Cheating Detection in Online Exams. IEEE Xplore.
+Stanford Vision Lab: "Object Detection and Use Cases."
+
+Eye Ball Tracking using mediapipes Iris
+new machine learning model for accurate iris estimation. Building on our work on MediaPipe Face Mesh, this model is able to track landmarks involving the iris, pupil and the eye contours using a single RGB camera, in real-time, without the need for specialized hardware. Through use of iris landmarks, the model is also able to determine the metric distance between the subject and the camera with relative error less than 10% without the use of depth sensor. Note that iris tracking does not infer the location at which people are looking, nor does it provide any form of identity recognition. Thanks to the fact that this system is implemented in MediaPipe — an open source cross-platform framework for researchers and developers to build world-class ML solutions and applications — it can run on most modern mobile phones, desktops, laptops and even on the web.
+
+An ML Pipeline for Iris Tracking
+The first step in the pipeline leverages our previous work on 3D Face Meshes, which uses high-fidelity facial landmarks to generate a mesh of the approximate face geometry. From this mesh, we isolate the eye region in the original image for use in the iris tracking model. The problem is then divided into two parts: eye contour estimation and iris location. We designed a multi-task model consisting of a unified encoder with a separate component for each task, which allowed us to use task-specific training data.
+
+Depth-from-Iris: Depth Estimation from a Single Image
+Our iris-tracking model is able to determine the metric distance of a subject to the camera with less than 10% error, without requiring any specialized hardware. This is done by relying on the fact that the horizontal iris diameter of the human eye remains roughly constant at 11.7±0.5 mm across a wide population [1, 2, 3, 4], along with some simple geometric arguments.
+
+n order to quantify the accuracy of the method, we compared it to the depth sensor on an iPhone 11 by collecting front-facing, synchronized video and depth images on over 200 participants. We experimentally verified the error of the iPhone 11 depth sensor to be < 2% for distances up to 2 meters, using a laser ranging device. Our evaluation shows that our approach for depth estimation using iris size has a mean relative error of 4.3% and standard deviation of 2.4%. We tested our approach on participants with and without eyeglasses (not accounting for contact lenses on participants) and found that eyeglasses increase the mean relative error slightly to 4.8% (standard deviation 3.1%). We did not test this approach on participants with any eye diseases (like arcus senilis or pannus). Considering MediaPipe Iris requires no specialized hardware, these results suggest it may be possible to obtain metric depth from a single image on devices with a wide range of cost-points.
+
+ This is a challenging task to solve on mobile devices, due to the limited computing resources, variable light conditions and the presence of occlusions, such as hair or people squinting. Iris tracking can also be utilized to determine the metric distance of the camera to the user.
+
+Release of MediaPipe Iris
+We are releasing the iris and depth estimation models as a cross-platform MediaPipe pipeline that can run on desktop, mobile and the web. As described in our recent Google Developer Blog post on MediaPipe on the web, we leverage WebAssembly and XNNPACK to run our Iris ML pipeline locally in the browser, without any data being sent to the cloud.
+
+Google blog: https://research.google/blog/mediapipe-iris-real-time-iris-tracking-depth-estimation/
+
