@@ -1,6 +1,0 @@
-1. Takes around 5-6 seconds to load the mediapipe  model
-2. Not able to classify the image as error if something obstruct the face by mistakenly
-3. Not able to detect phone
-4. light on the face should be eventone
-5. in the preprocessing part, model resizes the image dynamically. So when the face is near the camera it resizes the image to near about 350 350 pixels and if the face is far then it resizes to 240 240 size
-
