@@ -1,0 +1,62 @@
+To create a Flipkart Grid proctoring system, you would need to develop a robust online platform that utilizes webcam access, real-time facial recognition, screen recording, suspicious activity detection algorithms, and a secure backend to monitor candidates during an online assessment, flagging potential cheating behaviors while ensuring a smooth user experience, all while adhering to privacy regulations; key components include: user registration and verification, live video monitoring, screen recording, anomaly detection, automated alerts, and detailed reporting features; consider using cloud-based services for scalability and reliable infrastructure. [1, 2, 3]  
+Core functionalities: [1, 3]  
+
+• User Authentication: 
+	• Strict ID verification process (photo upload, live facial scan) to ensure the test taker is who they claim to be. 
+	• Secure login credentials with multi-factor authentication. 
+
+
+• Live Video Monitoring: 
+	• Webcam access to continuously capture the candidate's face during the exam. 
+	• Real-time facial detection and tracking to identify if someone else is taking the test. 
+	• Suspicious activity detection like excessive head movement, looking away from the screen for extended periods, or multiple faces in the camera frame. 
+
+
+• Screen Recording: 
+	• Capture the entire screen activity to monitor for tab switching, accessing unauthorized applications, or copying and pasting content. 
+	• Ability to review recorded footage later for detailed analysis. 
+
+
+• Anomaly Detection Algorithms: 
+	• Machine learning models to identify unusual behavior patterns, such as rapid keyboard typing, mouse movements outside the test window, or suspicious browser activity. 
+
+
+• Automated Alerts: 
+	• Real-time notifications to proctors when suspicious activity is detected, allowing them to intervene promptly. 
+
+
+• Reporting and Analytics: 
+	• Detailed reports on candidate activity, including flagged violations, screen recordings, and timestamps. 
+	• Ability to review flagged cases and make informed decisions regarding potential cheating. [1, 3]  
+
+
+
+Technical considerations: [1, 3, 4]  
+
+• Frontend Development: 
+	• User-friendly interface for candidates to access the exam platform. 
+	• WebRTC integration for seamless webcam access and real-time video streaming. 
+
+
+• Backend Development: 
+	• Robust server infrastructure to handle large volumes of concurrent users. 
+	• Secure data storage for candidate information and recording logs. 
+	• API endpoints for real-time communication between the client and server. 
+
+
+• AI and Machine Learning: 
+	• Facial recognition algorithms for user identification and monitoring. 
+	• Advanced anomaly detection models to identify suspicious behavior. [1, 3, 4]  
+
+
+
+Important Considerations: [1, 3]  
+
+• Privacy Concerns: Ensure compliance with data privacy regulations by clearly outlining how candidate data will be collected, stored, and used. 
+• System Stability: Test the proctoring system thoroughly under high load conditions to prevent technical glitches during exams. 
+• Accessibility: Design the system to be accessible to candidates with disabilities. [1, 3]  
+
+
+Generative AI is experimental.
+
+[1] https://unstop.com/hackathons/flipkart-grid-60-information-security-challenge-flipkart-grid-60-flipkart-1024250/online-quiz/399076[2] https://www.linkedin.com/posts/krishan-kumar08_flipkart-grid-60-previous-year-questions-activity-7219580645532917760-rwAd[3] https://www.flipkartcareers.com/[4] https://github.com/rohittuli5/Microsoft-Engage-Project
