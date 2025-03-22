@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-
+const maxReconnectAttempts = 5;
+let reconnectAttempts = 0;
 export default function Proctoring() {
   const videoRef = useRef(null);
   const wsRef = useRef(null);
+  const lastResultRef = useRef(null);
   const isProctoringRef = useRef(false);
   const [isProctoring, setIsProctoring] = useState(false);
   const [result, setResult] = useState({
@@ -34,12 +36,17 @@ export default function Proctoring() {
       wsRef.current.onmessage = (event) => handleWebSocketMessage(event);
 
       wsRef.current.onclose = () => {
-        console.log("WebSocket connection closed. Attempting to reconnect...");
-        setTimeout(() => {
-          if (isProctoringRef.current) {
-            startProctoring(); // Restart WebSocket connection
-          }
-        }, 3000);
+        console.log("WebSocket closed. Reconnecting...");
+        if (lastResultRef.current) {
+          console.log("Last object count:", lastResultRef.current.object_count);
+        } else {
+          console.log("No detection data received.");
+        }
+        if (reconnectAttempts < maxReconnectAttempts && isProctoringRef.current) {
+          const delay = Math.random() * 5000; // Random delay between 0-5 sec
+          setTimeout(startProctoring, delay);
+          reconnectAttempts++;
+        }
       };
       
 
@@ -79,7 +86,6 @@ export default function Proctoring() {
   
     const sendFrame = () => {
       if (!isProctoringRef.current || !videoRef.current || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-        console.log("Stopping frame capture.");
         return;
       }
   
@@ -88,17 +94,28 @@ export default function Proctoring() {
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   
+      // Convert to grayscale
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        const gray = (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
+        imageData.data[i] = gray;
+        imageData.data[i + 1] = gray;
+        imageData.data[i + 2] = gray;
+      }
+      ctx.putImageData(imageData, 0, 0);
+  
       canvas.toBlob((blob) => {
         if (blob && wsRef.current.readyState === WebSocket.OPEN) {
           wsRef.current.send(blob);
         }
-      }, "image/jpeg");
+      }, "image/jpeg", 0.5);  // Lower JPEG quality for less bandwidth
   
-      animationFrameId.current = requestAnimationFrame(sendFrame);
+      setTimeout(sendFrame, 300);  // Reduce frame rate dynamically
     };
   
     sendFrame();
   };
+  
   
 
   const handleWebSocketMessage = (event) => {
@@ -107,12 +124,16 @@ export default function Proctoring() {
       document.getElementById("videoFrame").src = imgURL;
     } else {
       const resultData = JSON.parse(event.data);
-      setResult((prevResult) => ({
-        ...prevResult,   // Preserve previous result data
-        message: resultData.message,  // Update the message
-        cheating_detected: resultData.cheating_detected,  // Update additional result data if any
-        object_count: resultData.object_count,  // Update additional result data if any
-      }));
+      setResult((prevResult) => {
+        const newResult = {
+          ...prevResult,
+          message: resultData.message,
+          cheating_detected: resultData.cheating_detected,
+          object_count: resultData.object_count,
+        };
+        lastResultRef.current = newResult;  // Store last result
+        return newResult;
+      });
     }
   };
 
