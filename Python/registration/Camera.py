@@ -2,7 +2,7 @@ import cv2 as cv
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from detection_classes.FacePreprocessing import FacePreprocessing
+from detection_classes.facePreprocessing import FacePreprocessing
 from detection_classes.objectDetection import ObjectDetectionModule
 
 def initialize_camera(width=640, height=480, fps=1):

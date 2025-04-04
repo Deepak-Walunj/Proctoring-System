@@ -6,7 +6,7 @@ from PIL import Image
 import pymongo as py
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from registration.Camera import finalImage
-from detection_classes.FacePreprocessing import FacePreprocessing
+from detection_classes.facePreprocessing import FacePreprocessing
 from detection_classes.objectDetection import ObjectDetectionModule
 
 client=py.MongoClient("mongodb://localhost:27017/")

@@ -2,7 +2,7 @@ import cv2 as cv
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from detection_classes.FacePreprocessing import FacePreprocessing
+from detection_classes.facePreprocessing import FacePreprocessing
 from detection_classes.objectDetection import ObjectDetectionModule
 from student_verification.student_verification import take_photo_from_database, faceMatching
 import time

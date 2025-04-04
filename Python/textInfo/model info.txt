@@ -233,3 +233,27 @@ We are releasing the iris and depth estimation models as a cross-platform MediaP
 
 Google blog: https://research.google/blog/mediapipe-iris-real-time-iris-tracking-depth-estimation/
 
+which ,odel is best for student verification:
+
+Comparison of FaceNet512, ArcFace, and SFace for EC2 Instances
+Feature											FaceNet512												ArcFace												SFace
+Accuracy (LFW Dataset)								~99.65%												~99.82%												~99.60%
+Model Size											Large (~100MB)										Medium (~50MB)										Small (~12MB)
+Computational Requirements							High (Needs 4GB+ GPU)								Moderate (Can run on CPU)							Low (Optimized for CPU)
+Processing Speed (CPU)								Slow (~3-5 sec per image pair)						Moderate (~1-2 sec per image pair)					Fast (~0.5-1 sec per image pair)
+Processing Speed (GPU - 4GB)						Fast (~0.5 sec per image pair)						Very Fast (~0.3 sec per image pair)					Extremely Fast (~0.1 sec per image pair)
+EC2 Instance Suitability (GPU Needed?)				Requires GPU (p2.xlarge, g4dn.xlarge, etc.)			Runs fine on CPU but better with GPU				Runs well on CPU, no GPU required
+Performance on t2.micro (1 vCPU, 1GB RAM)			🚫 Not usable (Out of memory, crashes)				⚠️ Slow (~5-8 sec per comparison)					✅ Usable (~1-2 sec per comparison)
+Performance on t3.micro (2 vCPUs, 8GB RAM)			⚠️ Very slow (~3-5 sec per comparison)				✅ Usable (~1-2 sec per comparison)					✅ Fast (~0.5-1 sec per comparison)
+Concurrent Users on t2.micro						❌ 0 users (Crashes)									⚠️ 1-2 users (Slow performance)						✅ 5-10 users
+Concurrent Users on t3.micro						⚠️ 1 user (Slow response)							✅ 5-10 users										✅ 20+ users
+Cloud Scaling Performance (AWS Load Handling)		❌ High cost, not recommended for scaling			⚠️ Good, but needs scaling for heavy use			✅ Best for scaling, low-cost and efficient
+Best Use Case										High-end GPU servers for large-scale verification	General-purpose verification with decent resources	Best for CPU-based, low-power environments
+
+
+Recommendation Based on EC2 Usage
+For t2.micro: Use SFace only. ArcFace is too slow, and FaceNet512 crashes.
+For t3.micro: ArcFace is a good option, but SFace is still the best for handling more users.
+For GPU-based EC2 (g4dn.xlarge, etc.): FaceNet512 or ArcFace will work efficiently.
+For Large-Scale Cloud Deployment: SFace is the best due to its speed and efficiency.
+

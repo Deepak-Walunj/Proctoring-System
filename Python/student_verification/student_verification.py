@@ -9,9 +9,9 @@ from deepface import DeepFace
 import json
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from registration.Camera import finalImage
-from detection_classes.FacePreprocessing import FacePreprocessing
+from detection_classes.facePreprocessing import FacePreprocessing
 from detection_classes.objectDetection import ObjectDetectionModule
-from starting_viva.camera2 import Proctor
+
 
 client=pymongo.MongoClient("mongodb://localhost:27017/")
 db=client["CandidateFace"]
@@ -71,7 +71,7 @@ def faceMatching(image1, image2):
     try:
         image_1=np.array(image1)
         image_2=np.array(image2)
-        result=DeepFace.verify(img1_path=image_1, img2_path=image_2, model_name="Facenet512", threshold=0.5)
+        result=DeepFace.verify(img1_path=image_1, img2_path=image_2, model_name="SFace", threshold=0.5)
         modelStatus=True
         verifToast="Verification model ran successfully"
         return result, modelStatus, verifToast
@@ -83,7 +83,7 @@ def faceMatching(image1, image2):
     
 def studentVerification(name):
     image1, dbIstatus, dbItoast=take_photo_from_database(name)
-    if image1:
+    if dbIstatus:
         image2, photoIstatus, photoItoast=take_photo_for_verification()
         if image2:
             result, verifStatus, verifToast=faceMatching(image1,image2)
@@ -91,6 +91,9 @@ def studentVerification(name):
         else:
             return result, verifStatus, verifToast
     else:
+        result=None
+        verifStatus=False
+        verifToast="Couldn't find the student!"
         return result, verifStatus, verifToast
     
 def main():
