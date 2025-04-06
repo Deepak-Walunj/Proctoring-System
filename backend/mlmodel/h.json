@@ -1,0 +1,309 @@
+{
+    "_id": {
+        "$oid": "67c93b7166fa9b705eaf1591"
+    },
+    "name": "abhi113",
+    "Score": "error in db.py: 'score'",
+    "rank": {
+        "$numberInt": "0"
+    },
+    "vivaID": "MI8YM6",
+    "videoID": "https://eduvantage-v1.s3.amazonaws.com/MI8YM6_abhi113.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIATAVAASXA5CGID7MF%2F20250306%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20250306T061451Z&X-Amz-Expires=36000&X-Amz-SignedHeaders=host&X-Amz-Signature=09ac6af20b68afc0a4ced4667a774a98a7986179ccbd913b088ff58a8a416178",
+    "feedback": "The candidate demonstrates inconsistent performance across the three questions.  While they show a good grasp of certain domains (e.g., retail store management strategies), their responses are frequently hampered by a lack of detail, poor organization, and insufficient depth of knowledge in other areas (e.g., performance management, customer service conflict resolution).  In one instance, the response was completely inadequate.  Although speech fluency and clarity are generally acceptable, improved coherence and a more structured approach to answering questions are necessary for better performance.  The candidate needs to demonstrate a stronger ability to articulate clear, comprehensive, and relevant answers, providing specific details and examples to support their claims.\n",
+    "providedQAndA": [
+        {
+            "question": "How would you initiate a performance review conversation with an underperforming senior employee?",
+            "userans": "Bhai Mujhe Nahin Pata",
+            "Analysis": {
+                "transcribed text": "Bhai Mujhe Nahin Pata",
+                "language of candidates response": "Hindi",
+                "content evaluation": {
+                    "completeness": {
+                        "score": {
+                            "$numberInt": "0"
+                        },
+                        "feedback": "The candidate's response is very brief and does not address the question in any way.  It is not clear what the candidate means by 'Bhai Mujhe Nahin Pata' (Brother, I don't know). This response does not show any attempt at engaging with the question or demonstrating knowledge of performance management."
+                    },
+                    "accuracy": {
+                        "score": {
+                            "$numberInt": "0"
+                        },
+                        "feedback": "The candidate's response does not provide any information related to the question.  The response 'Bhai Mujhe Nahin Pata' does not provide any factual information relevant to the model answer."
+                    },
+                    "relevance": {
+                        "score": {
+                            "$numberInt": "0"
+                        },
+                        "feedback": "The candidate's response is completely irrelevant to the question.  It does not address the topic of performance review conversations, nor does it align with the model answer."
+                    },
+                    "depth of knowledge": {
+                        "score": {
+                            "$numberInt": "0"
+                        },
+                        "feedback": "The candidate's response does not demonstrate any understanding of the domain.  It does not show any knowledge or insight into performance management or the process of initiating a performance review conversation."
+                    },
+                    "content score": {
+                        "$numberInt": "0"
+                    }
+                },
+                "speech analysis": {
+                    "fluency": {
+                        "score": {
+                            "$numberInt": "0"
+                        },
+                        "feedback": "The speech is very halting and disjointed, with clear pauses and hesitations. It is difficult to follow the flow of the response."
+                    },
+                    "clarity": {
+                        "score": {
+                            "$numberInt": "5"
+                        },
+                        "feedback": "The candidate's speech is moderately clear and easy to understand.  The pronunciation is somewhat clear. However, the audio quality is low and the environment is noisy."
+                    },
+                    "coherence": {
+                        "score": {
+                            "$numberInt": "0"
+                        },
+                        "feedback": "The response is completely disorganized and illogical. It does not provide a coherent answer to the question."
+                    },
+                    "grammar": {
+                        "score": {
+                            "$numberInt": "0"
+                        },
+                        "feedback": "The response is grammatically incorrect, with incomplete sentences. It does not follow the grammatical structure of standard Hindi."
+                    },
+                    "vocabulary": {
+                        "score": {
+                            "$numberInt": "0"
+                        },
+                        "feedback": "The vocabulary used is limited and does not demonstrate sophistication or a deep understanding of the domain."
+                    },
+                    "pauses": {
+                        "score": {
+                            "$numberInt": "0"
+                        },
+                        "feedback": "The response is filled with excessive and disruptive pauses. It is difficult to follow the flow of the response."
+                    },
+                    "stuttering/stmmering": {
+                        "score": {
+                            "$numberInt": "0"
+                        },
+                        "feedback": "The candidate stutters throughout the response. It is difficult to follow the response because of the frequent stuttering."
+                    },
+                    "filler words": {
+                        "score": {
+                            "$numberInt": "0"
+                        },
+                        "feedback": "There is no evidence of filler words in the response, however, the audio is very short and it is possible filler words are used and are not clear."
+                    },
+                    "speech score": {
+                        "$numberDouble": "1.25"
+                    }
+                },
+                "overall score": {
+                    "$numberDouble": "0.63"
+                },
+                "overall feedback": "The candidate's response demonstrates a lack of understanding of the domain. Their answer is very brief and does not address the question. There is no evidence of the candidate attempting to provide any relevant information or demonstrate any knowledge related to the topic. The speech quality is also poor.  The candidate's speech is halting, disjointed, and contains excessive pauses.  It is clear that the candidate is not comfortable with the subject matter or with providing an in-depth answer."
+            }
+        },
+        {
+            "question": "You notice that foot traffic in your store has significantly declined over the past month. As the Retail Store Manager, how would you investigate the cause of this drop? What strategies would you implement to attract more customers?",
+            "userans": "to investigate uh the cause analyze sales data overall trend customer segmentation transaction uh analysis gather customer feedback survey customer interview social media monitoring access the competitive landscape new competitors uh competitor promotion market trends evaluate internal factors",
+            "Analysis": {
+                "transcribed text": "to investigate uh the cause analyze sales data overall trend customer segmentation transaction uh analysis gather customer feedback survey customer interview social media monitoring access the competitive landscape new competitors uh competitor promotion market trends evaluate internal factors",
+                "language of candidates response": "English",
+                "content evaluation": {
+                    "completeness": {
+                        "score": {
+                            "$numberInt": "7"
+                        },
+                        "feedback": "The candidate provides a comprehensive response, covering most key aspects of the model answer. However, there is a lack of detail regarding specific strategies to attract customers."
+                    },
+                    "accuracy": {
+                        "score": {
+                            "$numberInt": "8"
+                        },
+                        "feedback": "The candidate accurately lists various factors and strategies, demonstrating good understanding of the domain. There are minor inaccuracies in the phrasing of some points."
+                    },
+                    "relevance": {
+                        "score": {
+                            "$numberInt": "9"
+                        },
+                        "feedback": "The response is highly relevant to the question, addressing the investigation and strategies aspects. It demonstrates clear understanding of the key concepts."
+                    },
+                    "depth of knowledge": {
+                        "score": {
+                            "$numberInt": "7"
+                        },
+                        "feedback": "The candidate shows good understanding of the domain, but lacks depth in some strategies. The response could have been more elaborate in suggesting specific initiatives."
+                    },
+                    "content score": {
+                        "score": {
+                            "$numberDouble": "7.75"
+                        },
+                        "feedback": "Overall, the content is strong, showing a good grasp of the topic, but could benefit from more detail and depth in certain areas."
+                    }
+                },
+                "speech analysis": {
+                    "fluency": {
+                        "score": {
+                            "$numberInt": "6"
+                        },
+                        "feedback": "The candidate's speech is generally fluent, but there are noticeable hesitations and pauses, particularly when transitioning between ideas."
+                    },
+                    "clarity": {
+                        "score": {
+                            "$numberInt": "8"
+                        },
+                        "feedback": "The speech is clear and easy to understand, with good articulation and pronunciation."
+                    },
+                    "coherence": {
+                        "score": {
+                            "$numberInt": "7"
+                        },
+                        "feedback": "The response is logically organized, but the flow could be smoother. The candidate could have used more connecting words or phrases to improve the coherence."
+                    },
+                    "grammar": {
+                        "score": {
+                            "$numberInt": "6"
+                        },
+                        "feedback": "The candidate uses grammatically correct sentences for the most part, but there are instances of improper usage of articles or prepositions."
+                    },
+                    "vocabulary": {
+                        "score": {
+                            "$numberInt": "7"
+                        },
+                        "feedback": "The candidate uses relevant vocabulary and terminology, demonstrating a good grasp of the domain language."
+                    },
+                    "pauses": {
+                        "score": {
+                            "$numberInt": "6"
+                        },
+                        "feedback": "The candidate uses pauses effectively, but there are instances of excessive pauses, especially when transitioning between ideas."
+                    },
+                    "stuttering/stmmering": {
+                        "score": {
+                            "$numberInt": "8"
+                        },
+                        "feedback": "There is minimal stuttering or stammering observed in the response."
+                    },
+                    "filler words": {
+                        "score": {
+                            "$numberInt": "7"
+                        },
+                        "feedback": "The candidate uses a few filler words, but their usage is not excessive."
+                    },
+                    "speech score": {
+                        "score": {
+                            "$numberDouble": "6.63"
+                        },
+                        "feedback": "Overall, the speech quality is acceptable, but could be improved with smoother transitions, reduced pauses, and more confident delivery."
+                    }
+                },
+                "overall score": {
+                    "$numberDouble": "7.19"
+                },
+                "overall feedback": "The candidate demonstrates a good understanding of the domain and addresses the question effectively, but lacks detailed strategy descriptions. The speech is generally fluent and clear, but can be improved with more smooth transitions and confident delivery."
+            }
+        },
+        {
+            "question": "How would you handle this situation while maintaining a positive customer relationship?",
+            "userans": "Hmm?  No. Okay I'm so glad that you have a good reason for that. It's not okay. You know we're a company that has the same prices for all the customers that we have. It's our policy you know? But thanks for your support. Thank you for the support. That's what we're all about. And I appreciate that you appreciate our products.  We have a good quality, I guess.  Good quality you know.  I'm gonna give you a call.  I'll get back to you.  Oh okay.  Yeah I'll get back to you.  Sure. Thank you.",
+            "Analysis": {
+                "transcribed text": "Hmm?  No. Okay I'm so glad that you have a good reason for that. It's not okay. You know we're a company that has the same prices for all the customers that we have. It's our policy you know? But thanks for your support. Thank you for the support. That's what we're all about. And I appreciate that you appreciate our products.  We have a good quality, I guess.  Good quality you know.  I'm gonna give you a call.  I'll get back to you.  Oh okay.  Yeah I'll get back to you.  Sure. Thank you.",
+                "language of candidates response": "English",
+                "content evaluation": {
+                    "completeness": {
+                        "score": {
+                            "$numberInt": "2"
+                        },
+                        "feedback": "The candidate doesn't really address the core aspects of the question. They acknowledge the customer's request, but the response is vague and lacks a clear plan of action. The answer is not complete and lacks detail. This needs work."
+                    },
+                    "accuracy": {
+                        "score": {
+                            "$numberInt": "4"
+                        },
+                        "feedback": "The candidate tries to address the issue of fairness to all customers, but their response lacks clarity and doesn't align completely with the expected approach of the model answer."
+                    },
+                    "relevance": {
+                        "score": {
+                            "$numberInt": "3"
+                        },
+                        "feedback": "While the response does relate to the question of handling a customer request, it fails to incorporate key elements of maintaining a positive customer relationship as outlined in the model answer. This needs work."
+                    },
+                    "depth of knowledge": {
+                        "score": {
+                            "$numberInt": "1"
+                        },
+                        "feedback": "The response demonstrates a very superficial understanding of the situation.  The candidate doesn't clearly understand how to handle a customer request for a discount while maintaining a positive relationship. This needs significant improvement."
+                    },
+                    "content score": {
+                        "score": {
+                            "$numberDouble": "2.5"
+                        },
+                        "feedback": "The candidate's response struggles to meet the requirements of the question.  The response is not comprehensive and lacks a clear understanding of customer service strategies."
+                    }
+                },
+                "speech analysis": {
+                    "fluency": {
+                        "score": {
+                            "$numberInt": "7"
+                        },
+                        "feedback": "The candidate's speech flows naturally, with minimal hesitations. The delivery is quite smooth."
+                    },
+                    "clarity": {
+                        "score": {
+                            "$numberInt": "8"
+                        },
+                        "feedback": "The candidate speaks clearly with good articulation. Their pronunciation is generally good, making it easy to understand."
+                    },
+                    "coherence": {
+                        "score": {
+                            "$numberInt": "5"
+                        },
+                        "feedback": "The candidate's response lacks a clear logical structure. While they acknowledge the customer's request, the response meanders and doesn't build upon the previous point, making it somewhat confusing."
+                    },
+                    "grammar": {
+                        "score": {
+                            "$numberInt": "6"
+                        },
+                        "feedback": "The candidate's grammar is generally good, but there are some minor inaccuracies and informal expressions.  This needs improvement."
+                    },
+                    "vocabulary": {
+                        "score": {
+                            "$numberInt": "5"
+                        },
+                        "feedback": "The candidate uses a decent vocabulary, but it lacks sophistication and clarity in conveying the message effectively."
+                    },
+                    "pauses": {
+                        "score": {
+                            "$numberInt": "6"
+                        },
+                        "feedback": "The candidate uses pauses effectively, but some are a bit longer than necessary."
+                    },
+                    "stuttering/stmmering": {
+                        "score": {
+                            "$numberInt": "8"
+                        },
+                        "feedback": "The candidate exhibits very minimal stuttering or stammering."
+                    },
+                    "filler words": {
+                        "score": {
+                            "$numberInt": "6"
+                        },
+                        "feedback": "The candidate uses a few filler words, but they are not overly excessive."
+                    },
+                    "speech score": {
+                        "score": {
+                            "$numberDouble": "6.125"
+                        },
+                        "feedback": "The candidate demonstrates good speaking skills overall, with clear articulation and a natural flow. There is room for improvement in the organization and structure of their response."
+                    }
+                },
+                "overall score": {
+                    "$numberDouble": "4.31"
+                },
+                "overall feedback": "The candidate's response is lacking in its content, failing to adequately address the question's core aspects. While their speech is generally clear and fluent, the response lacks a coherent structure. To improve, the candidate needs to develop a deeper understanding of the customer service principles and articulate a clearer plan of action. "
+            }
+        }
+    ]
+}

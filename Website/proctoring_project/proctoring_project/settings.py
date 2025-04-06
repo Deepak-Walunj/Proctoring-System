@@ -130,10 +130,13 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 ASGI_APPLICATION = "proctoring_project.asgi.application"
 
 CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels.layers.InMemoryChannelLayer"
-        }
-    }
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],  # Make sure Redis is running on this port
+        },
+    },
+}
 
 LOGGING = {
     'version': 1,
@@ -150,9 +153,16 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+        'django.channels': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
     },
 }
 
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "ws://localhost:5173",
 ]

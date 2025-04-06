@@ -41,6 +41,28 @@ Nothing Detected (Second Frame)	        ~7.2ms	            ~7.2ms
 
 if cellphone is there for 6 seconds in the frame then it makrs as cheating
 
+using Redis + websocket
+Redis (Port 6379) → Acts as a message broker to manage WebSocket connections across multiple Django processes.
+Django WebSockets (Port 8000) → Handles incoming WebSocket connections via Django Channels.
+
+🔍 How It Works?
+A WebSocket client connects to ws://localhost:8000/ws/some_endpoint/.
+Django Channels accepts the WebSocket connection and routes it to the correct consumer.
+The channels_redis backend stores WebSocket connection data in Redis.
+If multiple WebSocket connections occur:
+Django Channels (on port 8000) still processes them.
+Redis (on port 6379) helps manage these connections efficiently across multiple workers.
+
+🌟 Why Is Redis Needed?
+The default InMemoryChannelLayer cannot handle multiple WebSocket connections in different processes.
+If you deploy with multiple workers (Gunicorn, Daphne, ASGI workers, etc.), each worker needs to share WebSocket data, which Redis enables.
+Redis acts as a message bus so that WebSocket events can be shared across multiple instances of your Django app.
+
+🚀 How to Confirm It’s Working?
+Run Redis (redis-server should be active on 6379).
+Start Django ASGI server (daphne -b 0.0.0.0 -p 8000 proctoring_project.asgi:application).
+Open two browser tabs or use wscat to connect two WebSockets to ws://localhost:8000/ws/some_endpoint/.
+If both connect successfully and receive messages without interference, it means multiple connections are working correctly.
 
 Scaling for 1 Million Users
 Your backend needs horizontal scaling using:

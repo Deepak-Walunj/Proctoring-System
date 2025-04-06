@@ -13,7 +13,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))  # Add current directory to path
 from objectDetection import ObjectDetectionModule  # Import object detection module
 
-class FrameConsumer(AsyncWebsocketConsumer):
+class ObjectDetectionConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.frame_queue = deque(maxlen=1)  # Store only the latest frame (drops older frames)
@@ -26,6 +26,7 @@ class FrameConsumer(AsyncWebsocketConsumer):
             self.room_group_name = f"proctoring_{self.room_name}"
             print("Created room successfully")
             self.object_detector = ObjectDetectionModule()
+            self.connected = True
             print("Object Detection Model Initialized")
             await self.accept()
             print("WebSocket Connection Established")
@@ -36,7 +37,10 @@ class FrameConsumer(AsyncWebsocketConsumer):
         """Handle WebSocket disconnection."""
         try:
             print("WebSocket Disconnected")
-            self.object_detector = None  # Destroy model instance to free resources
+            self.connected = False  # Mark connection as closed
+            self.frame_queue.clear()  # Clear pending frames to avoid processing after disconnect
+            if self.object_detector:
+                del self.object_detector  # Cleanup model instance
         except Exception as e:
             print(f"Error while disconnecting websocket: {e}")
             
@@ -56,7 +60,7 @@ class FrameConsumer(AsyncWebsocketConsumer):
             
     async def process_latest_frame(self):
         """Processes the latest frame in the queue asynchronously."""
-        while self.frame_queue:
+        while self.frame_queue and self.connected:
             try:
                 bytes_data = self.frame_queue.popleft()  # Get the latest frame
                 start_time = time.time()
@@ -73,14 +77,15 @@ class FrameConsumer(AsyncWebsocketConsumer):
                 if processing_time > 0.5:
                     print(f"Warning: Slow processing detected ({processing_time:.2f} sec)")
                 # Send processed frame
-                _, buffer = cv.imencode('.jpg', frame)
-                frame_bytes = buffer.tobytes()
-                await self.send(bytes_data=frame_bytes)
-                await self.send(text_data=json.dumps({
-                    "cheating_detected": cheating_detected,
-                    "object_count": object_count,
-                    "message": toast
-                }))
+                if self.connected:  # Ensure connection before sending
+                    _, buffer = cv.imencode('.jpg', frame)
+                    frame_bytes = buffer.tobytes()
+                    await self.send(bytes_data=frame_bytes)
+                    await self.send(text_data=json.dumps({
+                        "cheating_detected": cheating_detected,
+                        "object_count": object_count,
+                        "message": toast
+                    }))
             except Exception as e:
                 print(f"Error processing frame: {e}")
                 await self.send(text_data=json.dumps({"status": "error", "message": str(e)}))

@@ -1,21 +1,12 @@
 import cv2 as cv
-import base64
 import sys, os
 from PIL import Image
-import numpy as np
-import pymongo
-from io import BytesIO
-from deepface import DeepFace
-import json
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from registration.Camera import finalImage
 from detection_classes.facePreprocessing import FacePreprocessing
 from detection_classes.objectDetection import ObjectDetectionModule
-
-
-client=pymongo.MongoClient("mongodb://localhost:27017/")
-db=client["CandidateFace"]
-coll=db["Faces"]
+from detection_classes.studentVerification import StudentVerification
+from detection_classes.centralisedDatabaseOps import DatabaseOps
 
 def take_photo_for_verification():
     try:
@@ -40,48 +31,17 @@ def take_photo_for_verification():
         return  None, photoIstatus, photoItoast
 
 def take_photo_from_database(name):
-    try:
-        data=coll.find_one({"name": name}, {"_id":0, "data": 1})
-        dbIstatus=False
-        dbItoast=""
-        if data is not None:
-            image_data=data["data"]
-            if isinstance(image_data, str):
-                image_data = base64.b64decode(image_data)
-            # print(image)
-            pil_image = Image.open(BytesIO(image_data))
-            print("From student verification, image taken from the database successfully!")
-            dbItoast="From student verification, image taken from the database successfully"
-            dbIstatus=True
-            return pil_image, dbIstatus, dbItoast
-        else:
-            print("Couldn't find the student!")
-            dbItoast="Couldn't find the student!"
-            dbIstatus=False
-            return None, dbIstatus, dbItoast
-    except Exception as e:
-        print(f"[Error] retrieving image from database: {e}")
-        dbIstatus=False
-        dbItoast=f"[Error] retrieving image from database: {e}"
-        return None, dbIstatus, dbItoast
-    
+    dbOps=DatabaseOps()
+    pil_image, dbIstatus, dbItoast=dbOps.take_photo_from_database(name)
+    print(dbItoast)
+    return pil_image, dbIstatus, dbItoast
+
 def faceMatching(image1, image2):
-    verifToast=""
-    modelStatus=False
-    try:
-        image_1=np.array(image1)
-        image_2=np.array(image2)
-        result=DeepFace.verify(img1_path=image_1, img2_path=image_2, model_name="SFace", threshold=0.5)
-        modelStatus=True
-        verifToast="Verification model ran successfully"
-        return result, modelStatus, verifToast
-    except Exception as e:
-        print(f"[Error] in verification model! :{e}")
-        verifToast=f"[Error] in verification model! :{e}"
-        modelStatus=False
-        return None, modelStatus, verifToast
+    studentVerificationObj=StudentVerification()
+    result, verifStatus, verifToast=studentVerificationObj.verifyStudent(image1, image2)
+    return result, verifStatus, verifToast
     
-def studentVerification(name):
+def verifyStudent(name):
     image1, dbIstatus, dbItoast=take_photo_from_database(name)
     if dbIstatus:
         image2, photoIstatus, photoItoast=take_photo_for_verification()
@@ -98,7 +58,7 @@ def studentVerification(name):
     
 def main():
     name=input("Enter your name: ")
-    result, verifStatus, verifToast=studentVerification(name)
+    result, verifStatus, verifToast=verifyStudent(name)
     if verifStatus==True:
         print(f"{verifToast}")
         print(result.get("verified"))
