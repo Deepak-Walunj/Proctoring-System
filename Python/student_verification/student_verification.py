@@ -56,16 +56,20 @@ def verifyStudent(name):
         verifToast="Couldn't find the student!"
         return result, verifStatus, verifToast
     
-def main():
+def studentVerificationMain():
     name=input("Enter your name: ")
+    verifStatus=False
+    verifToast=""
     result, verifStatus, verifToast=verifyStudent(name)
     if verifStatus==True:
         print(f"{verifToast}")
         print(result.get("verified"))
+        result, verifStatus, verifToast
     else:
         print(f"Not able to verify student: {verifToast}")
+        result, verifStatus, verifToast
 if __name__ == "__main__":
-    main()
+    result, verifStatus, verifToast=studentVerificationMain()
     
     
     

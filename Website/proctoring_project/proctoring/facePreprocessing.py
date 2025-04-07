@@ -121,7 +121,7 @@ class FacePreprocessing:
                     self.x = angles[0] * 360
                     self.y = angles[1] * 360
                     
-                    curr_gaze = "Forward"
+                    curr_gaze = ""
                     if self.y < -10:
                         text = "Looking left? Look forward!"
                         curr_gaze = "Left"

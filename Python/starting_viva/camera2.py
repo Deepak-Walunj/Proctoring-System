@@ -4,7 +4,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from detection_classes.facePreprocessing import FacePreprocessing
 from detection_classes.objectDetection import ObjectDetectionModule
-from student_verification.student_verification import take_photo_from_database, faceMatching
+from detection_classes.studentVerification import StudentVerification
+from detection_classes.centralisedDatabaseOps import DatabaseOps
 import time
 import threading
 import queue
@@ -13,7 +14,7 @@ stop_event=threading.Event()
 verification_queue = queue.LifoQueue(maxsize=1)
 result_queue=queue.Queue()
 
-def run_periodic_verification(name):
+def run_periodic_verification(name, student_verificator, dbOps):
     verifyResult={
         "verified":0,
         "notVerified":0,
@@ -24,12 +25,12 @@ def run_periodic_verification(name):
         if stop_event.is_set():
             print(f"Breaking the threaded event by pressing esc/enter")
             break
-        pil_image1, dbIstatus, dbItoast=take_photo_from_database(name)
+        pil_image1, dbIstatus, dbItoast=dbOps.take_photo_from_database(name)
         print(f"Image retrieved from database status :{dbIstatus}")
         print(f"Image retrieved from database toast :{dbItoast}")
         if not verification_queue.empty():
             frame = verification_queue.get()
-            result, modelStatus, verifToast=faceMatching(pil_image1, frame)
+            result, modelStatus, verifToast=student_verificator.verifyStudent(pil_image1, frame)
             print(f"Model run status status :{modelStatus}")
             print(f"Student verification toast :{verifToast}")
             if modelStatus:
@@ -65,13 +66,13 @@ def initialize_camera(width=640, height=480, fps=1):
         toast="Error initialising camera"
         return camStart_status, None, toast
 
-def main(object_detector, face_preprocessor, cap, name):
+def main(object_detector, face_preprocessor, student_verificator, dbOps, cap, name):
     pStatus=False
     pToast=""
     first_frame=None
     frame_counter=0
     start_time=time.time()
-    verification_thread = threading.Thread(target=run_periodic_verification, args=(name,), daemon=True)
+    verification_thread = threading.Thread(target=run_periodic_verification, args=(name, student_verificator, dbOps,), daemon=True)
     verification_thread.start()
     try:
         while  cap.isOpened():
@@ -134,11 +135,13 @@ def main(object_detector, face_preprocessor, cap, name):
 def Proctor(name):
     object_detector = ObjectDetectionModule()
     face_preprocessor = FacePreprocessing()
+    student_verificator = StudentVerification()
+    dbOps=DatabaseOps()
     camStart_status, cam, cam_toast = initialize_camera()
     print(cam_toast)
     if camStart_status==True:
         print(f"{cam_toast}")
-        pStatus, pToast, gazeResult, objectDetectionResult, gaze_toast, objectDetectionToast, verificationResult = main(object_detector, face_preprocessor, cam, name)
+        pStatus, pToast, gazeResult, objectDetectionResult, gaze_toast, objectDetectionToast, verificationResult = main(object_detector, face_preprocessor, student_verificator, dbOps, cam, name)
         stop_event.set()
         return pStatus, pToast, gazeResult, objectDetectionResult, gaze_toast, objectDetectionToast, verificationResult
     else:

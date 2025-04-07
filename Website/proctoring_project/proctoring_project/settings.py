@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -131,10 +132,7 @@ ASGI_APPLICATION = "proctoring_project.asgi.application"
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],  # Make sure Redis is running on this port
-        },
+        "BACKEND": "channels.layers.InMemoryChannelLayer", 
     },
 }
 
@@ -161,7 +159,7 @@ LOGGING = {
     },
 }
 
-
+CORS_ALLOW_ALL_ORIGINS=True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "ws://localhost:5173",

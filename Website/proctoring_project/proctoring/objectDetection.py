@@ -45,7 +45,7 @@ class ObjectDetectionModule:
         top_left_x, top_left_y = int(width * 0.05), int(height * 0.05)
         cheating_material_status = False
         detected_labels = set()
-        toast = "Nothing detected yet"
+        toast = ""
         
         try:
             frame, detection_result = self.detect_and_draw(frame)

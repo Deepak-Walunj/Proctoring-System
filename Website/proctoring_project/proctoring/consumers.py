@@ -1,101 +1,87 @@
-# proctoring/consumers.py
-
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
+import pandas as pd
+import base64
+import numpy as np
+from io import BytesIO
+from PIL import Image
+from .facePreprocessing import FacePreprocessing
+from .objectDetection import ObjectDetectionModule
+import cv2 as cv
 import os
 import sys
-import json
 import asyncio
-import time
-import cv2 as cv
-import numpy as np
-from collections import deque
+import queue
 from channels.generic.websocket import AsyncWebsocketConsumer
+from google.cloud import speech_v1 as speech
+import time
+from dotenv import load_dotenv 
+from concurrent.futures import ThreadPoolExecutor
+# from mlmodel.s3tostt import transcribe_audio,decode_base64_audio
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))  # Add current directory to path
-from objectDetection import ObjectDetectionModule  # Import object detection module
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),"..")))
 
-class ObjectDetectionConsumer(AsyncWebsocketConsumer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.frame_queue = deque(maxlen=1)  # Store only the latest frame (drops older frames)
-        self.processing = False  # Flag to prevent overlapping processing
-        
+object_detector = ObjectDetectionModule()
+face_preprocessor = FacePreprocessing()
+class WebRTCConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        try:
-            """Establish WebSocket connection."""
-            self.room_name = "proctoring_room"
-            self.room_group_name = f"proctoring_{self.room_name}"
-            print("Created room successfully")
-            self.object_detector = ObjectDetectionModule()
-            self.connected = True
-            print("Object Detection Model Initialized")
-            await self.accept()
-            print("WebSocket Connection Established")
-        except Exception as e:
-            print(f"Error in connecting websocket: {e}")
-            
+        await self.accept()
+        print("WebSocket connected: Live streaming setup successfully!")
+        # cv2.namedWindow('imgbox', cv2.WINDOW_NORMAL)
+
     async def disconnect(self, close_code):
-        """Handle WebSocket disconnection."""
+        print("WebSocket disconnected: Streaming ended.")
+        cv.destroyAllWindows()
+
+    async def receive(self, text_data):
         try:
-            print("WebSocket Disconnected")
-            self.connected = False  # Mark connection as closed
-            self.frame_queue.clear()  # Clear pending frames to avoid processing after disconnect
-            if self.object_detector:
-                del self.object_detector  # Cleanup model instance
-        except Exception as e:
-            print(f"Error while disconnecting websocket: {e}")
+            data = json.loads(text_data)
+            print(type(data))
+            print(f"Received signaling message: {data['type']} ")
+            # print(f"Received signaling message: {data} ")
             
-    async def receive(self, bytes_data=None):
-        """Receives and queues frames while ensuring minimal lag."""
-        try:
-            if not bytes_data:
-                await self.send(text_data=json.dumps({"status": "error", "message": "No frame received"}))
-                return
-            self.frame_queue.append(bytes_data)  # Store only the latest frame
-            if not self.processing:  # If not already processing, start processing
-                self.processing = True
-                asyncio.create_task(self.process_latest_frame())
+            if(data['type']=='frame'):
+                base64_str = data['frame'].split(',')[1]
+                image_data = base64.b64decode(base64_str)
+                img = Image.open(BytesIO(image_data))
+                frame=cv.cvtColor(np.array(img), cv.COLOR_RGB2BGR)
+                print(type(frame))
+                # Ensure dtype is uint8
+                if frame.dtype != np.uint8:
+                    frame = frame.astype(np.uint8)
+                    print("rectangle error")
+                cond, face, toast=self.process_frame(frame,face_preprocessor,object_detector)
+                print("toast is : ",toast)
+                await self.send(text_data=json.dumps(toast))
+            else:
+                print(f"Unknown message type received: {data['type']}")
+            if data.get("type") == "offer":
+                print("Offer received: Live streaming in progress.")
+            elif data.get("type") == "new-ice-candidate":
+                print("ICE candidate received.")
         except Exception as e:
-            print(f"Error receiving frame: {e}")
-            await self.send(text_data=json.dumps({"status": "error", "message": str(e)}))
-            
-    async def process_latest_frame(self):
-        """Processes the latest frame in the queue asynchronously."""
-        while self.frame_queue and self.connected:
-            try:
-                bytes_data = self.frame_queue.popleft()  # Get the latest frame
-                start_time = time.time()
-                # Convert and process frame
-                frame, flag = self.process_frame(bytes_data)
-                if not flag:
-                    await self.send(text_data=json.dumps({"status": "error", "message": "Frame conversion failed"}))
-                    continue
-                frame, cheating_detected, object_count, toast = self.object_detector.detect_cheating(frame)
-                print(f"Detection complete: {toast} Time:", time.time())
-                print(object_count)
-                # If processing time > threshold (0.5 sec), log warning
-                processing_time = time.time() - start_time
-                if processing_time > 0.5:
-                    print(f"Warning: Slow processing detected ({processing_time:.2f} sec)")
-                # Send processed frame
-                if self.connected:  # Ensure connection before sending
-                    _, buffer = cv.imencode('.jpg', frame)
-                    frame_bytes = buffer.tobytes()
-                    await self.send(bytes_data=frame_bytes)
-                    await self.send(text_data=json.dumps({
-                        "cheating_detected": cheating_detected,
-                        "object_count": object_count,
-                        "message": toast
-                    }))
-            except Exception as e:
-                print(f"Error processing frame: {e}")
-                await self.send(text_data=json.dumps({"status": "error", "message": str(e)}))
-        self.processing = False  # Allow new frames to start processing
-        
-    def process_frame(self, frame_data):
-        """Convert raw bytes into an OpenCV image format."""
+            print(f"[ERROR] failed to process frame: {e}")
+    
+    def process_frame(self, frame,face_preprocessor,object_detector):
+        print("type of frame in process frame fun is : ",type(frame))
+        clean_frame=frame.copy()
         try:
-            nparr = np.frombuffer(frame_data, np.uint8)
-            frame = cv.imdecode(nparr, cv.IMREAD_COLOR)
-            return (frame, True) if frame is not None else (None, False)
-        except Exception:
-            return None, False
+            faceDetection_status, result_faceDetection, fDetection_toast=face_preprocessor.faceDetection(frame)
+            if not faceDetection_status:
+                print(fDetection_toast)
+                exit()
+            facePoint_status, result_facePoints, facePoints_detection_toast=face_preprocessor.faceMesh(frame)
+            if not facePoint_status:
+                print(facePoints_detection_toast)
+                exit()
+            frame, looking_straight_status, gaze_toast, gazeResult=face_preprocessor.gaze(frame, result_facePoints)
+            if not looking_straight_status:
+                return False ,frame, gaze_toast
+            frame, minDistance_status, maxDistance_status, inRange_status, distance, minD_toast=face_preprocessor.minDistance(frame, result_faceDetection)
+            if not inRange_status:
+                return False ,frame ,minD_toast
+            frame, cheating_status, material, object_toast=object_detector.detect_cheating(frame)
+            if cheating_status:
+                return False,frame,object_toast
+        except Exception as e:
+            print(f"[ERROR] unable to process frames: {e}")

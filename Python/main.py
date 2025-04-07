@@ -1,7 +1,7 @@
 from registration.register import register
 from login.login import login
 from admin.admin import Admin
-from student_verification.student_verification import studentVerification
+from student_verification.student_verification import studentVerificationMain
 from starting_viva.liveProctoring import liveProctoring
 cond1=False
 def main():
@@ -38,7 +38,7 @@ def main():
                         break
                 case 4:
                     print("You are about to give test.\nBefore giving the test you will go through student verfication process..")
-                    result, verifStatus, verifToast=studentVerification(name)
+                    result, verifStatus, verifToast=studentVerificationMain()
                     if verifStatus==True:
                         print(f"{verifToast}")
                         print(result.get("verified"))
@@ -48,11 +48,12 @@ def main():
                 case 5:
                     print("We are starting our exam.....")
                     name=input("Please enter your name! ")
-                    pStatus, pToast, gazeResult, objectDetectionResult, gaze_toast, objectDetectionToast=liveProctoring(name)
+                    pStatus, pToast, gazeResult, objectDetectionResult, gaze_toast, objectDetectionToast, verificationResult=liveProctoring(name)
                     if pStatus==True:
                         print(f"Proctoring ended with status: {pStatus} and toast: {pToast}")
                         print(f"Gaze Toast: {gaze_toast} and result: {gazeResult}")
                         print(f"Object Detection Toast: {objectDetectionToast} and result: {objectDetectionResult}")
+                        print(f"Student verification result: {verificationResult}")
                         break
                     else:
                         print("Proctoring failed")

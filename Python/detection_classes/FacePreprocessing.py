@@ -121,7 +121,7 @@ class FacePreprocessing:
                     self.x = angles[0] * 360
                     self.y = angles[1] * 360
                     
-                    curr_gaze = "Forward"
+                    curr_gaze = None
                     if self.y < -10:
                         text = "Looking left? Look forward!"
                         curr_gaze = "Left"
@@ -137,7 +137,7 @@ class FacePreprocessing:
                     else:
                         text = "Looking forward"
                         looking_straight_status = True
-                        curr_gaze = "Forward"
+                        curr_gaze = "forward"
                     cv.putText(face, text, (top_left_x, top_left_y + int(height * 0.18)), 
                             cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
                     # Implement 20-frame tracking logic
