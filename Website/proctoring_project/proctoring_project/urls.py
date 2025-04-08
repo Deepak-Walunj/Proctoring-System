@@ -17,11 +17,11 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path
-from .views import get_csrf_token
-
+from .views import get_csrf_token, upload_video
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("get-csrf-token/", get_csrf_token, name="get_csrf_token"),
+    path("candidate/upload_video/", upload_video, name="upload_video"),
 ]
 
 

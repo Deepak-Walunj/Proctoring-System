@@ -5,8 +5,13 @@ export default function App() {
   const [vivaStarted, setVivaStarted] = useState(false);
 
   const vivaHandler = () => {
-    setVivaStarted((prev) => !prev);
-    console.log(vivaStarted ? "Viva ended" : "Viva started");
+    setVivaStarted((prev) => {
+      const newState = !prev;
+      console.log(newState ? "Viva started" : "Viva ended");
+      return newState;
+    });
+    console.log("Viva Ending..."); 
+    setVivaStarted(false); 
   };
 
   return (
@@ -20,7 +25,7 @@ export default function App() {
         >
           Start Viva
         </button>
-      <VideoAnalysis endviva={vivaStarted} username="test_user" vivaID="12345" />
+      <VideoAnalysis endviva={vivaStarted} username="Deepak Walunj" vivaID="12345" vivaHandler={vivaHandler}  />
     </div>
   );
 }

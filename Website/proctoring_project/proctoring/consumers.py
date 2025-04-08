@@ -7,6 +7,8 @@ from io import BytesIO
 from PIL import Image
 from .facePreprocessing import FacePreprocessing
 from .objectDetection import ObjectDetectionModule
+from .centralisedDatabaseOps import DatabaseOps
+from .studentVerification import StudentVerification
 import cv2 as cv
 import os
 import sys
@@ -23,23 +25,33 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),"..")))
 
 object_detector = ObjectDetectionModule()
 face_preprocessor = FacePreprocessing()
+student_verificator = StudentVerification()
+dbOps = DatabaseOps()
 class WebRTCConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.verifyResult = {
+            "verified": 0,
+            "notVerified": 0,
+            "Error": 0
+        }
+        self.latest_frame = None
+        self.latest_username = None
+        self.last_verification_time = time.time() 
+        
     async def connect(self):
         await self.accept()
         print("WebSocket connected: Live streaming setup successfully!")
-        # cv2.namedWindow('imgbox', cv2.WINDOW_NORMAL)
-
+        
     async def disconnect(self, close_code):
         print("WebSocket disconnected: Streaming ended.")
-        cv.destroyAllWindows()
-
+        
     async def receive(self, text_data):
         try:
             data = json.loads(text_data)
             print(type(data))
             print(f"Received signaling message: {data['type']} ")
-            # print(f"Received signaling message: {data} ")
-            
+            print(f"Received username: {data['name']}")
             if(data['type']=='frame'):
                 base64_str = data['frame'].split(',')[1]
                 image_data = base64.b64decode(base64_str)
@@ -50,9 +62,23 @@ class WebRTCConsumer(AsyncWebsocketConsumer):
                 if frame.dtype != np.uint8:
                     frame = frame.astype(np.uint8)
                     print("rectangle error")
+                self.latest_frame = frame
+                self.latest_username = data['name']
                 cond, face, toast=self.process_frame(frame,face_preprocessor,object_detector)
                 print("toast is : ",toast)
-                await self.send(text_data=json.dumps(toast))
+                await self.send(text_data=json.dumps({
+                    "type":"instruction",
+                    "message": toast
+                }))
+                current_time = time.time()
+                if current_time - self.last_verification_time >= 10:
+                    self.last_verification_time = current_time
+                    verificationResults, verifyStatus, verifyToast = self.verificationStudent(self.latest_frame, student_verificator, dbOps, self.latest_username)
+                    await self.send(text_data=json.dumps({
+                        "type": "verification",
+                        "verificationResults": verificationResults,
+                        "verifyToast": verifyToast
+                    }))
             else:
                 print(f"Unknown message type received: {data['type']}")
             if data.get("type") == "offer":
@@ -85,3 +111,38 @@ class WebRTCConsumer(AsyncWebsocketConsumer):
                 return False,frame,object_toast
         except Exception as e:
             print(f"[ERROR] unable to process frames: {e}")
+            
+    def verificationStudent(self, frame, student_verificator, dbOps, username):
+        verifyToast=""
+        verifyStatus=False
+        try:
+            pil_image1, dbIstatus, dbItoast=dbOps.take_photo_from_database(username)
+            if not dbIstatus:
+                verifyToast=dbItoast
+                verifyStatus=False
+                print(f"[ERROR] {dbItoast}")
+                return None, verifyStatus, verifyToast
+            result, modelStatus, modelVerifyToast=student_verificator.verifyStudent(pil_image1, frame)
+            if modelStatus:
+                if result.get("verified")==True:
+                    print("Student verified!")
+                    verifyToast="Student verified!"
+                    self.verifyResult["verified"]+=1
+                else:
+                    print("Anonymous student!")
+                    verifyToast="Anonymous student!"
+                    self.verifyResult["notVerified"]+=1
+            else:
+                verifyToast=modelVerifyToast
+                verifyStatus=False
+                print(f"[ERROR] model error: {verifyToast}")
+                self.verifyResult["Error"]+=1
+                return None, verifyStatus, verifyToast
+            verifyStatus=True
+            return self.verifyResult, modelStatus, verifyToast
+        except Exception as e:
+            print(f"[ERROR] in verification model! :{e}")
+            verifyToast=f"[ERROR] in verification model! :{e}"
+            verifyStatus=False
+            return None, verifyStatus, verifyToast
+            

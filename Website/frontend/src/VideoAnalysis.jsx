@@ -19,6 +19,7 @@ const [frameInterval, setFrameInterval] = useState(null);
 const [currentInstruction, setCurrentInstruction] = useState(null);
 const [prevInstruction, setPrevInstruction] = useState(null);
 const [uploading, setUploading] = useState(false); // State to control the backdrop
+const [verificationResult, setVerificationResult] = useState(null);
 
 useEffect(() => {
 if (!endviva) {
@@ -26,6 +27,11 @@ if (!endviva) {
 } else {
     stopRecordingAndCleanup();
 }
+return () => {
+    if (endviva) {
+        stopRecordingAndCleanup();
+    };
+    }
 }, [endviva]);
 
 const startVideoAndRecording = async () => {
@@ -68,29 +74,30 @@ if (mediaRecorder && mediaRecorder.state === "recording") {
     mediaRecorder.stop();
     toast.info("Recording stopped.");
 }
-
 if (videoRef.current?.srcObject) {
+    console.log("Stopping video stream...");
     const tracks = videoRef.current.srcObject.getTracks();
     tracks.forEach((track) => track.stop());
     videoRef.current.srcObject = null;
 }
-
 if (signalingSocket) {
     signalingSocket.close();
     setSignalingSocket(null);
 }
-
 if (frameInterval) {
     clearInterval(frameInterval);
     setFrameInterval(null);
 }
-
 setRecordedChunks([]);
 };
-
 const initWebSocket = (stream) => {
 const socket = new WebSocket(WS_URL);
 setSignalingSocket(socket);
+if (signalingSocket) {
+    console.log("Closing WebSocket connection...");
+    signalingSocket.close();
+    setSignalingSocket(null);
+    }
 
 socket.onopen = () => {
     console.log("Connected to signaling server");
@@ -100,10 +107,18 @@ socket.onopen = () => {
 socket.onmessage = (message) => {
     console.log("Raw message:", message.data);
     try {
-    const data = JSON.parse(message.data);
-    setCurrentInstruction(data);
-    } catch (error) {
-    console.error("Error parsing message:", error);
+        const data = JSON.parse(message.data);
+        if (data.type === "instruction") {
+            setCurrentInstruction(data.message);
+        }
+        else if (data.type === "verification") {
+            console.log("Verification Results:", data.verificationResults);
+            toast.info(data.verifyToast); 
+            setVerificationResult(data);
+        }
+    } 
+    catch (error) {
+        console.error("Error parsing message:", error);
     }
 };
 
@@ -113,6 +128,9 @@ socket.onerror = (error) => {
 
 socket.onclose = () => {
     console.log("Disconnected from signaling server");
+    if (verificationResult) {
+        console.log("Final Verification Result:", verificationResult);
+    }
 };
 };
 
@@ -138,8 +156,9 @@ const captureFrame = () => {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const frameData = canvas.toDataURL("image/jpeg");
     console.log("Sending frame:", frameData.substring(0, 100));
+    console.log(`Sending username: ${username}`);
     if (socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify({ type: "frame", frame: frameData }));
+    socket.send(JSON.stringify({ type: "frame", frame: frameData , name: username}));
     }
 };
 
@@ -222,7 +241,11 @@ return (
     <p className="absolute top-0 left-1/2 transform -translate-x-1/2 text-xs sm:text-xs md:text-xl lg:text-xl font-semibold text-center text-black bg-gray-100 p-1 rounded-md z-10">
         {currentInstruction}
     </p>
-
+    {verificationResult && (
+    <div className="absolute top-16 left-1/2 transform -translate-x-1/2 bg-red-500 text-white p-2 rounded-md shadow-md z-20">
+        <p>{verificationResult.message}</p>
+    </div>
+    )}
     {/* Video Element */}
     <video ref={videoRef} autoPlay muted className="w-full h-full object-fill" />
     <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full object-fill" />
@@ -235,7 +258,10 @@ return (
     {/* End Viva Button */}
     <button
         className="absolute bottom-4 right-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-        onClick={vivaHandler}
+        onClick={() => {
+            stopRecordingAndCleanup();
+            vivaHandler();
+        }}
     >
         End Viva
     </button>
