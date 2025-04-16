@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 class ObjectDetectionModule:
-    CHEATING_MATERIALS = ["backpack", "handbag", "laptop", "mouse", "keyboard", "cell phone", "book"]
+    
     def __init__(self, model_path=None, score_threshold=0.3):
         if model_path is None:
             model_path = "efficientdet.tflite"
@@ -20,6 +20,7 @@ class ObjectDetectionModule:
             
         self.model_path = model_path
         print(f"[DEBUG] Final model path: {self.model_path}")
+        self.CHEATING_MATERIALS = ["backpack", "handbag", "laptop", "mouse", "keyboard", "cell phone", "book"]
         self.detector = self._initialize_detector(self.model_path, score_threshold)
         self.previous_objects = dict()  # Store objects from the previous frame
         self.object_count = {item: 0 for item in self.CHEATING_MATERIALS}
