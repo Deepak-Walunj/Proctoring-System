@@ -26,19 +26,25 @@ class ObjectDetectionModule:
         self.object_count = {item: 0 for item in self.CHEATING_MATERIALS}
         
     def _initialize_detector(self, model_path, score_threshold):
-        model_path = os.path.relpath(model_path, os.getcwd())
-        model_path = model_path.replace("\\", "/")
-        model_path = Path(model_path).resolve(strict=True)  
-        print(f"Model path: {model_path}")
+        model_path = os.path.abspath(model_path).replace("\\", "/")
+        print(f"Resolved model path: {model_path}")
+        
+        if not os.path.exists(model_path):
+            raise ValueError(f"Model file not found at {model_path}")
+        
+        with open(model_path, "rb") as model_file:
+            model_buffer = model_file.read()
+        
         options = ObjectDetectorOptions(
-            base_options=BaseOptions(model_asset_path=str(model_path)),
+            base_options=BaseOptions(model_asset_buffer=model_buffer),
             max_results=-1,
             category_allowlist=self.CHEATING_MATERIALS,
-            running_mode=RunningMode.IMAGE,  
+            running_mode=RunningMode.IMAGE,
             score_threshold=score_threshold,
         )
         return ObjectDetector.create_from_options(options)
-    
+
+            
     def detect_cheating(self, frame):
         font_scale = 0.5  
         thickness = 2
