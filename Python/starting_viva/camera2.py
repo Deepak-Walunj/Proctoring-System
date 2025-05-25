@@ -20,6 +20,7 @@ def run_periodic_verification(name, student_verificator, dbOps):
     #     "notVerified":0,
     #     "Error":0
     # }
+    verificationResult, modelStatus, verifToast=dict(), False, ""
     while not stop_event.is_set():
         time.sleep(10) 
         if stop_event.is_set():
