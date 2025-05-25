@@ -1,0 +1,303 @@
+1.faceDetection(self, frame): To perform face detection on the input frame using MediaPipe’s FaceDetection model and return the
+processed detection results. 
+
+Input Parameter:
+frame:
+Type: numpy.ndarray
+Description: A single video frame or image in BGR color format (as provided by OpenCV's VideoCapture). This frame serves as the input
+to the face detection pipeline.
+The input frame is first converted from BGR to RGB color space using OpenCV’s cvtColor() function. This is necessary because MediaPipe
+models accept images in RGB format. The MediaPipe FaceDetection model is applied to the RGB frame
+
+Output:
+result_detection
+Type: mediapipe.framework.formats.detection_pb2.Detection
+Description: MediaPipe’s detection result object. This contains:
+Detected faces (if any)
+Bounding box coordinates
+Detection confidence scores
+Key landmarks (e.g., nose tip, mouth center, eyes)
+
+Usage and Application:
+Detect presence of human faces in a scene.
+Determine the number of people visible (single, multiple, or none).
+Extract bounding boxes to localize face regions.
+Serve as input for downstream tasks such as face mesh detection, face cropping, identity recognition, or anomaly detection in
+surveillance systems.
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+2. faceMesh(self, frame): To detect and extract fine-grained facial landmarks using MediaPipe’s FaceMesh model. This function enables
+a detailed analysis of facial features including contours, eyes, mouth, and nose.
+
+Input Parameter:
+frame:
+Type: numpy.ndarray
+Description: An image frame in RGB color space. Unlike face detection, this function assumes the image is already in RGB format, and
+no conversion is applied within the method.
+The input frame is passed to the MediaPipe FaceMesh model to detect facial landmarks
+
+Output:
+result_facePoints
+Type: mediapipe.framework.formats.landmark_pb2.NormalizedLandmarkList
+Description: The result object containing a list of 468 facial landmarks for each detected face. Each landmark includes:
+x, y: Normalized 2D coordinates on the image
+z: Depth information indicating how far the point is from the image plane
+
+Usage and Application:
+Gaze Tracking: By analyzing eye landmarks, it is possible to estimate gaze direction (left, right, up, down).
+Head Pose Estimation: Specific facial points can be used to estimate pitch and yaw angles.
+Face Alignment: Mesh landmarks enable geometric normalization of face orientation.
+Expression Analysis: Landmark movement patterns can help identify facial expressions or emotions.
+Cheating Detection: Useful in proctoring systems to identify whether a user is facing away, obstructing their face, or interacting 
+with other devices.
+-------------------------------------------------------------------------------------------------------------------------------------
+
+3. draw_dynamic_box(self,frame): its just a function to create a red box at the center of each frame so that user can place himself at
+the center of camera of frame. Its also does the work of indicating user the two options he has i.e either to press enter or ESC
+This primarily is the requirement for the registration of the candidate where system registers or takes his photo only when he is 
+centered in the frame. Its a necessity because in the DB we are storing a clean good image which will be required by the student
+verification function for comparison.
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+4. gaze(self, face, result_facePoint)
+Its a head gaze system not an eye gaze system, only movement of head position is detected here not eyeball movement
+
+This function analyzes gaze direction using facial landmarks from MediaPipe's face detection model.
+It computes 3D head pose estimation to determine whether the subject is looking left, right, up, down, or forward.
+The system tracks gaze behavior for 20 frames and maintains a count of gaze direction occurrences.
+
+Face Landmark Extraction
+Landmarks used: [33, 263, 1, 61, 291, 199] (Key facial points).
+These correspond to key anatomical reference points on the face, specifically:
+33 and 263: Outer corners of the left and right eyes respectively.
+61 and 291: Inner corners of the eyes or cheek area near the eyes.
+1: Tip of the nose (used as the central reference point).
+199: Chin or jaw area for downward positioning reference.
+
+These landmarks are strategically selected to cover:
+Horizontal alignment (left and right symmetry).
+Vertical alignment (forehead to chin).
+Depth perception (by including central and peripheral facial features).
+
+If multiple faces are detected, it iterates through them.
+Extracts 2D coordinates (for screen-space mapping) and 3D coordinates (for depth estimation).
+Nose landmark (idx == 1) is used as a reference for 3D positioning.
+
+Head Pose Estimation
+
+Landmark Mapping and Head Pose Calculation
+The landmark coordinates are scaled by the frame width and height to convert normalized values ([0, 1]) to actual pixel positions.
+x, y = int(lm.x * img_w), int(lm.y * img_h)
+for each point, both 2D and 3D versions are appended to separate arrays:
+face_2d: Used for camera-space mapping.
+face_3d: Used for depth-based orientation in pose estimation.
+Special handling for landmark 1 (nose) involves appending an additional Z-component multiplied by 8000 to exaggerate depth for better
+precision during pose solving.
+
+Uses solvePnP (Perspective-n-Point): OpenCV’s solvePnP function is then used to solve the head pose:
+_, rot_vec, trans_vec = cv.solvePnP(face_3d, face_2d, cam_matrix, dist_matrix)
+Where:
+face_3d, face_2d = 3D and 2D landmark positions.
+cam_matrix = Intrinsic camera matrix constructed using image width and height.
+dist_matrix = Assumed zero distortion coefficients (idealized camera model).
+solvePnP algorithm estimate rotation and translation vectors.
+Converts the rotation vector into Euler angles:
+x-angle → Up/Down movement.
+y-angle → Left/Right movement.
+The resulting rotation vector is converted to a rotation matrix using cv.Rodrigues, and finally decomposed into Euler angles using 
+cv.RQDecomp3x3.
+These angles represent:
+x: Pitch (Up/Down).
+y: Yaw (Left/Right).
+z: Roll (Tilt — unused in this context).
+These angle values are then scaled by 360 to bring them into a readable range for threshold comparison.
+
+Camera parameters:
+Focal length = image_width * 1
+
+Distortion matrix: Zeroes (assuming no lens distortion).
+
+Gaze Classification
+Based on head angles:
+y < -10 → Looking Left (Text: "Looking left? Look forward!")
+y > 10 → Looking Right (Text: "Looking right? Look forward!")
+x < -10 → Looking Down (Text: "Looking down? Look forward!")
+x > 10 → Looking Up (Text: "Looking up? Look forward!")
+Otherwise → Looking Forward (Normal state).
+
+Tracking Gaze Behavior
+Gaze status is updated every frame.
+Dictionary self.gaze_tracking stores:
+First value → Count of frames a gaze has been detected.
+Second value → Count of frames the gaze has been missing.
+
+If a gaze is detected:
+If previously seen → Increment detection count & reset missing count.
+If new → Initialize with (1, 0).
+If a gaze is missing:
+Increment its missing count.
+If missing for 20 frames, it is removed.
+
+Gaze Confirmation Logic
+An object must appear for 10 frames before updating self.gaze_result[gaze].
+Prevents false positives due to temporary head movements.
+self.prev_gaze keeps track of the last detected gaze.
+
+Handling Face Obstructions
+If no face landmarks are detected:
+Displays: "Something is obstructing the face"
+Tracks the "Obstruct" label similarly to other gaze directions.
+If obstruction persists for 20 frames, it is removed from tracking.
+
+Displaying Results
+Gaze direction text is displayed in red (0, 0, 255) on the face.
+cv.putText() is used to overlay detection results.
+
+Why 20 Frames?
+The camera operates at 10 FPS:
+1 second = 10 frames
+2 seconds = 20 frames
+This prevents erratic tracking due to rapid head movements.
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+5. singleFaceInsideBox:
+used to:
+Visually ensure that only one face is present and correctly positioned inside a predefined bounding box area in a frame.
+Detect multiple faces or faces outside the box to restrict or alert the user.
+Provide real-time feedback (like toast messages) for guiding the user during video-based face authentication, examination proctoring,
+or secure facial verification.
+
+Functionality:
+Set Up Variables and Define Bounding Box
+font_scale = 0.5  
+thickness = 2
+height, width, _ = face.shape
+box_coords = (int(width * 0.3), int(height * 0.2), int(width * 0.4), int(height * 0.6))
+
+box_coords defines a central rectangular region in the frame where the user is expected to keep their face.
+It's a rectangle that covers:
+40% of the width
+60% of the height
+Positioned at 30% from the left and 20% from the top
+
+Loops over each face detected by the face detection model.
+Converts relative bounding box coordinates to absolute pixel coordinates.
+
+Check If Face Lies Inside the Defined Box
+if (box_coords[0] < x < box_coords[0] + box_coords[2] and
+    box_coords[1] < y < box_coords[1] + box_coords[3] and
+    box_coords[0] < x + w < box_coords[0] + box_coords[2] and
+    box_coords[1] < y + h < box_coords[1] + box_coords[3]):
+
+Evaluate the Situation
+If no face inside the box → "Please be inside the box" (red text)
+If exactly one face inside, and none outside → "Single face detected inside the box" (green text)
+If multiple faces inside/outside → "Multiple faces detected: X" (red text)
+If no face detected at all → "No face detected"
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+6. minDistance(self, frame, results):
+designed to estimate the distance between a user's face and the camera in real time, and to determine whether that distance falls 
+within an acceptable range.
+The function works by analyzing the bounding box dimensions of detected faces in the frame using a face detection model. It 
+calculates the face width in pixels and uses the formula distance = 5000 / face_width to approximate the user's distance from the 
+camera — a heuristic based on the idea that the closer the face, the larger its width in the frame.
+
+The function first initializes several flags (minDistance_status, maxDistance_status, inRange_status) and calculates the position for
+displaying the warning message on the frame. It then iterates through all detected faces and computes their distances, storing the 
+closest one among them. If the closest detected face is nearer than the predefined minimum threshold (self.threshold_distance), a 
+warning message such as “Too close” is displayed in red, and appropriate status flags are set to False. If the distance is greater 
+than the self.max_threshold_distance, it displays “Too Far” with the same red alert and sets flags accordingly. If the face is within
+the valid distance range, it displays the measured distance in green and updates all status flags to True.
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+7. detect_faces(self, face, result_faceDetection):
+responsible for identifying whether any faces are present in a given image frame and, if so, how many.
+begins by copying the input image to clean_face to preserve the original frame. It then checks whether any detections are present in
+result_faceDetection. If faces are detected, it iterates over each detection, extracts the bounding box coordinates (relative to the 
+image size), and calculates their pixel-based dimensions
+For each detection, it increments a face counter (faces = i + 1) and sets the faceDetected_status flag to True.
+If no faces are detected, the function sets the detection flag to False, sets the toast message to "No faces detected," and returns 
+zero as the face count. In case an error occurs during processing—such as if the detection results are malformed or unexpected—it 
+catches the exception, logs an error message, and returns default values indicating no face was detected.
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+8. detectFaces(self, frame, result_detection):
+designed to classify the number of faces detected in a given frame into three categories: a single face, multiple faces, or no face
+at all
+it first determines how many detections are present by checking result_detection.detections. If detections are available, it counts 
+them using len(), otherwise defaults to 0. Based on this count, it populates a dictionary self.faceDetectionResult with boolean flags
+to indicate one of three states: {"single": True, "multiple": False, "no": False} for exactly one face, {"single": False, "multiple":
+True, "no": False} for more than one face, and {"single": False, "multiple": False, "no": True} for no face.
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+9. crop_face(self,face, result_faceDetection):
+responsible for extracting a cropped region of a detected face from a given image frame.
+The function begins by copying the original image to avoid modifying the original input. If the model has detected faces, it
+retrieves the bounding box of the first detected face and calculates the coordinates relative to the image dimensions. A rectangle is
+drawn on the image to visualize the bounding box.
+
+To ensure the cropped face includes a bit more context around the face, the bounding box is expanded by a padding_factor of 1.3. This
+means the crop will include 30% more area than the face itself. The coordinates are adjusted accordingly to avoid going outside the
+image boundaries. The function then extracts the region of interest from the copied image. It includes a check to ensure the 
+cropped region is valid; if the crop is empty or its dimensions are invalid (e.g., due to obstacles or errors in bounding box 
+calculation), it returns a failure status and an error message.
+
+---------------------------------------------------------------------------------------------------------------------------------------
+
+10. detect_landmarks(self, face, result_facePoints):
+Detect 468 facial landmarks.
+Extract left and right eye landmarks (from indices 468–477).
+Annotate the landmarks visually on the image.
+Save the annotated image and return the result for downstream processing.
+Ensures the face image is square by resizing if height ≠ width (optional but helps some models).
+A copy of the original face is kept to avoid drawing on it.
+
+Landmark Detection:
+Checks if multi_face_landmarks exists.
+Iterates over the landmarks of each detected face (usually one for most cases).
+Extracts:
+General 468 face landmarks.
+Specific eye landmarks:
+Left eye → indices [468, 469, 470, 471, 472]
+Right eye → indices [473, 474, 475, 476, 477]
+Draws small green circles at each landmark location on the image.
+
+Edge Cases Handled:
+If no landmarks are detected: returns failure status, prints a helpful message.
+If exceptions occur (e.g., due to invalid image input), catches and logs the error gracefully.
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+11. align_face
+effective for aligning a face based on eye landmarks. Aligns a face image so the eyes are horizontally aligned
+
+Inputs:
+face: The face image (already cropped).
+left_eye_landmarks: List of (x, y) coordinates for the left eye (typically 5).
+right_eye_landmarks: Same for the right eye.
+
+Eye Center Calculation:
+Converts eye landmarks to np.float32 arrays for precision.
+Calculates the center of each eye using np.mean.
+Calculates the midpoint between both eyes.
+Rotation Angle Calculation:
+Uses atan2 to compute the angle (in degrees) between the line connecting both eyes and the horizontal axis.
+
+Rotation Matrix:
+Uses OpenCV's getRotationMatrix2D to generate a matrix to rotate the image around the eye center.
+
+Face Alignment:
+Applies the rotation with warpAffine to get the aligned face image.
+
+CROP FACE, DETECT LANDMARK AND ALIGN FUNCTIONS ARE UTILISED ONLY FOR REGISTRATION OF PROFILE PIC AND STUDENT VERIFICATION PROCESS
+IN REGISTRATION, BEFORE SAVING THE PHOTO TO DB WE CROP, RESIZE AND ALIGN IT, SO THAT LESS SIZE USEFUL IMAGE IS STORED IN THE DB
+IN STUDENT VERIFICATION, WE TAKE THE REAL TIME IMAGE AND PREPROCESS IT SO THAT IT WILL SATISFIES THE REQUIREMENT OF THE MODEL AND 
+ALIGNS THE IMAGE SO IT WOULD BE EASIER FOR THE MODEL TO COMPARE.

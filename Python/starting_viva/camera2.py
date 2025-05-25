@@ -15,11 +15,11 @@ verification_queue = queue.LifoQueue(maxsize=1)
 result_queue=queue.Queue()
 
 def run_periodic_verification(name, student_verificator, dbOps):
-    verifyResult={
-        "verified":0,
-        "notVerified":0,
-        "Error":0
-    }
+    # verifyResult={
+    #     "verified":0,
+    #     "notVerified":0,
+    #     "Error":0
+    # }
     while not stop_event.is_set():
         time.sleep(10) 
         if stop_event.is_set():
@@ -30,21 +30,21 @@ def run_periodic_verification(name, student_verificator, dbOps):
         print(f"Image retrieved from database toast :{dbItoast}")
         if not verification_queue.empty():
             frame = verification_queue.get()
-            result, modelStatus, verifToast=student_verificator.verifyStudent(pil_image1, frame)
+            verificationResult, modelStatus, verifToast=student_verificator.verifyStudent(pil_image1, frame)
             print(f"Model run status status :{modelStatus}")
             print(f"Student verification toast :{verifToast}")
-            if modelStatus:
-                if result.get("verified")==True:
-                    print("Student verified!")
-                    verifyResult["verified"]+=1
-                else:
-                    print("Anonymous student!")
-                    verifyResult["notVerified"]+=1
-            else:
-                print(f"[ERROR] model error: {verifToast}")
-                verifyResult["Error"]+=1
-            verification_queue.task_done()
-    result_queue.put(verifyResult)
+            # if modelStatus:
+            #     if result.get("verified")==True:
+            #         print("Student verified!")
+            #         verifyResult["verified"]+=1
+            #     else:
+            #         print("Anonymous student!")
+            #         verifyResult["notVerified"]+=1
+            # else:
+            #     print(f"[ERROR] model error: {verifToast}")
+            #     verifyResult["Error"]+=1
+            # verification_queue.task_done()
+    result_queue.put(verificationResult)
     
 def initialize_camera(width=640, height=480, fps=1):
     toast=""

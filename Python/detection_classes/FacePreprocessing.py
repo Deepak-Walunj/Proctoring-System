@@ -197,19 +197,19 @@ class FacePreprocessing:
             toast = "Error in face gazing system"
             return face, looking_straight_status, toast, self.gaze_result
     
-    def singleFaceInsideBox(self, frame, results):
+    def singleFaceInsideBox(self, face, result_faceDetection):
         toast=""
         font_scale = 0.5  
         thickness = 2
-        height, width, _ = frame.shape
+        height, width, _ = face.shape
         box_coords = (int(width * 0.3), int(height * 0.2), int(width * 0.4), int(height * 0.6))
         top_left_x, top_left_y = int(width * 0.05), int(height * 0.05)
-        self.draw_dynamic_box(frame)
+        self.draw_dynamic_box(face)
         single_face_status=False
         box_faces=0
         non_box_faces=0
-        if results.detections:
-            for detection in results.detections:
+        if result_faceDetection.detections:
+            for detection in result_faceDetection.detections:
                 bboxC = detection.location_data.relative_bounding_box
                 x, y, w, h = (int(bboxC.xmin * width), int(bboxC.ymin * height),
                             int(bboxC.width * width), int(bboxC.height * height))
@@ -222,35 +222,35 @@ class FacePreprocessing:
                     non_box_faces += 1
             if box_faces == 0:
                 toast= "Please be inside the box"
-                cv.putText(frame,toast, (top_left_x, top_left_y + int(height * 0.08)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
+                cv.putText(face,toast, (top_left_x, top_left_y + int(height * 0.08)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
             elif box_faces == 1 and non_box_faces == 0:
                 toast="Single face detected inside the box"
                 single_face_status = True
-                cv.putText(frame, toast, (top_left_x, top_left_y + int(height * 0.08)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 255, 0), thickness)
+                cv.putText(face, toast, (top_left_x, top_left_y + int(height * 0.08)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 255, 0), thickness)
             elif box_faces > 1 or non_box_faces > 0:
                 toast=f"Multiple faces detected :{box_faces + non_box_faces}"
-                cv.putText(frame, toast, (top_left_x, top_left_y + int(height * 0.08)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
+                cv.putText(face, toast, (top_left_x, top_left_y + int(height * 0.08)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
         else:
             toast= "No face detected"
-            cv.putText(frame, toast, (top_left_x, top_left_y + int(height * 0.08)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
-        return frame, single_face_status, box_faces, non_box_faces, toast
+            cv.putText(face, toast, (top_left_x, top_left_y + int(height * 0.08)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
+        return face, single_face_status, box_faces, non_box_faces, toast
     
-    def minDistance(self, frame, results):
+    def minDistance(self, face, result_faceDetection):
         toast=""
         inRange_status = False
         maxDistance_status = False
         minDistance_status = False
         font_scale = 0.5
         thickness = 2
-        height, width, _ = frame.shape
+        height, width, _ = face.shape
         top_left_x, top_left_y = int(width * 0.05), int(height * 0.05)
         warning_message = None
         closest_distance = float('inf')
         try:
-            if results.detections:
-                for detection in results.detections:
+            if result_faceDetection.detections:
+                for detection in result_faceDetection.detections:
                     bboxC = detection.location_data.relative_bounding_box
-                    ih, iw, _ = frame.shape
+                    ih, iw, _ = face.shape
                     x, y, w, h = int(bboxC.xmin * iw), int(bboxC.ymin * ih), int(bboxC.width * iw), int(bboxC.height * ih)
                     face_width = w
                     distance = 5000 / face_width
@@ -258,21 +258,21 @@ class FacePreprocessing:
                         closest_distance = distance
                 if closest_distance < self.threshold_distance:
                     warning_message = f"Too close: < {self.threshold_distance} cm"
-                    cv.putText(frame, warning_message,
+                    cv.putText(face, warning_message,
                             (top_left_x, top_left_y + int(height * 0.12)),
                             cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
                     minDistance_status = False
                     inRange_status = False
                 elif closest_distance > self.max_threshold_distance:
                     warning_message = f"Too Far: > {self.max_threshold_distance} cm"
-                    cv.putText(frame, warning_message,
+                    cv.putText(face, warning_message,
                             (top_left_x, top_left_y + int(height * 0.12)),
                             cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
                     inRange_status = False
                     maxDistance_status = False
                 else:
                     warning_message=f"Distance: {int(closest_distance)} cm"
-                    cv.putText(frame, warning_message,
+                    cv.putText(face, warning_message,
                             (top_left_x, top_left_y + int(height * 0.12)),
                             cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 255, 0), thickness)
                     minDistance_status = True
@@ -281,7 +281,7 @@ class FacePreprocessing:
                 toast=warning_message
         except Exception as e:
             print(f"[ERROR] in either detecting the face or calculating the min/max distance :{e}")
-        return frame, minDistance_status, maxDistance_status, inRange_status, closest_distance, toast
+        return face, minDistance_status, maxDistance_status, inRange_status, closest_distance, toast
     
     def detect_faces(self, face, result_faceDetection):
         toast=""
@@ -501,6 +501,8 @@ def main(cap, face_preprocessor):
             frame, looking_straight_status, gaze_toast, gResult=obj.gaze(frame, result_facePoints)
             frame, minDistance_status, maxDistance_status, inRange_status, distance, distance_toast=obj.minDistance(frame, result_faceDetection)
             print(gResult)
+            multipleFaceResult, toast=obj.detectFaces(frame, result_faceDetection)
+            print(multipleFaceResult)
             cv.imshow("Camera", frame)
             processed_frame, single_face_status, box_faces, non_box_faces, singleFace_toast = obj.singleFaceInsideBox(frame, result_faceDetection)
             cv.imshow("Camera", processed_frame)
@@ -574,6 +576,7 @@ def main(cap, face_preprocessor):
         cap.release()
         cv.destroyAllWindows()
         print(gResult)
+        print(multipleFaceResult)
 
 if __name__ == "__main__":
     cond, cap, cam_toast = initialize_camera()
