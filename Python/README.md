@@ -10,6 +10,8 @@ You can run individual classes or you can run small modules made to test these c
 
 Some of the results of facePreprocessing are stored in resultImages directory
 
+You can see the errors or defects or logical errors or things to be done in defectsInSys.txt 
+
 Before starting install all the dependencies with "pip install -r requirements.txt"
 
 To start this system you first need to get yourself registered with your name your pic. You can do this directly by main.py or you can directly do it with register.py in registration directory

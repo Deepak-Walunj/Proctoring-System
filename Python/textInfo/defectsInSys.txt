@@ -8,3 +8,4 @@ about 350 350 pixels and if the face is far then it resizes to 240 240 size(✅d
 faces
 7. Handling the redundant function in facePreprocessing, detect_landmarks, its use is to only have the eyes landmarks for the 
 align_face function 
+8. Connecting student verification with crop and align function 
