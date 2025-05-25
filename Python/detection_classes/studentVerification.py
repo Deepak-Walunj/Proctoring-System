@@ -1,5 +1,7 @@
 from deepface import DeepFace
 import numpy as np
+import cv2 as cv
+
 class StudentVerification:
     def __init__(self):
         self.modelStatus=False
@@ -9,8 +11,14 @@ class StudentVerification:
     
     def verifyStudent(self, image1, image2):
         try:
-            image_1=np.array(image1)
-            image_2=np.array(image2)
+            if isinstance(image1, str):
+                image_1=cv.imread(image1)
+            else:
+                image_1=np.array(image1)
+            if isinstance(image2, str):
+                image_2=cv.imread(image2)
+            else:
+                image_2=np.array(image2)
             self.result=DeepFace.verify(img1_path=image_1, img2_path=image_2, model_name="SFace", threshold=0.5)
             self.modelStatus=True
             self.verifToast="Verification model ran successfully"
@@ -35,7 +43,9 @@ class StudentVerification:
         
 if __name__ == "__main__":
     studentVerificationObj=StudentVerification()
-    image1=None
-    image2=None
+    image1 = r"C:\\Users\\Deepak\\OneDrive\Desktop\\3rd year college Industry project\\Proctoring(Self)\\PYTHON\\testImages\\face1.jpg"
+    image2 = r"C:\\Users\\Deepak\\OneDrive\\Desktop\\3rd year college Industry project\\Proctoring(Self)\\PYTHON\\testImages\\face2.jpg"
+    # img=Image.open(image1)
+    # img.show()
     result, verifStatus, verifToast=studentVerificationObj.verifyStudent(image1, image2)
     print(f"Result: {result}, Status: {verifStatus}, Toast: {verifToast}")

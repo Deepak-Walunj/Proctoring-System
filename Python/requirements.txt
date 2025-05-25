@@ -1,0 +1,11 @@
+absl_py==2.1.0
+deepface==0.0.93
+ibm_cloud_sdk_core==3.22.0
+ibm_watson==9.0.0
+mediapipe==0.10.20
+opencv_contrib_python==4.10.0.84
+opencv_python==4.11.0.86
+Resemblyzer==0.1.4
+sounddevice==0.5.1
+tensorflow==2.18.0
+tensorflow_intel==2.18.0

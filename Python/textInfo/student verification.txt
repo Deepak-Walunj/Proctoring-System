@@ -1,0 +1,45 @@
+What is SFace?
+SFace is a lightweight facial recognition model.
+Developed by Huawei, optimized for low-latency face verification.
+It's designed for real-time applications.
+In DeepFace, it supports facial feature extraction and comparison.
+The model compares two face embeddings and calculates a distance metric (e.g., cosine or Euclidean distance). If the distance is 
+below the threshold, it verifies the face match.
+
+✔️ Threshold = 0.5
+This is the limit for deciding verification.
+Distance ≤ 0.5 ⇒ same person (verified).
+Distance > 0.5 ⇒ different person (not verified).
+
+Step-by-step Workflow:
+1. Convert input images to NumPy arrays: This ensures that the images are in the correct format for DeepFace (even if input is in PIL
+or other format).
+2. Run the DeepFace verification: Returns a dictionary like: {
+                                                                "verified": True/False,
+                                                                "distance": 0.34,
+                                                                "model": "SFace",
+                                                                ...
+                                                                }
+
+Stores the result in self.result
+Sets self.modelStatus = True
+Sets a success message
+
+3. Condition: Model ran successfully
+If True, checks the "verified" field in the result.
+If verified: Increments verified count
+Returns:
+Result dictionary
+Model status
+Success message
+If not verified: Increments notVerified count
+If self.modelStatus is somehow not set (unlikely in this context): Increments the error count
+Returns failure message
+
+Student verification Logic: we will have the student image from the DB, then we will convert it to numpy(if its a frame of camera) or
+cv2 image format(if its a path), second image i.e. real time image we will take every 10 seconds and give these 2 images every 10 
+seconds to model. So at every 10 seconds their will be a verification check and eberytime the result will be stored in the result 
+dictionary.
+
+
+
