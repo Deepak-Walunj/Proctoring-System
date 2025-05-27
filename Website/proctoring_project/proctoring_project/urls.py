@@ -17,11 +17,10 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path
-from .views import get_csrf_token, upload_video
+from .views import fetch_image_by_name
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("get-csrf-token/", get_csrf_token, name="get_csrf_token"),
-    path("candidate/upload_video/", upload_video, name="upload_video"),
+    path("api/fetch-image/<str:name>/", fetch_image_by_name, name="fetch-image"),
 ]
 
 

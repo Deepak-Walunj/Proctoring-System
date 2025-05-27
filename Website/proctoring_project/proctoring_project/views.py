@@ -1,15 +1,31 @@
 from django.http import JsonResponse
-from django.middleware.csrf import get_token
+from PIL import Image
+from io import BytesIO
+import base64
+import sys, os
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),"..")))
 
-def get_csrf_token(request):
-    return JsonResponse({'csrfToken': get_token(request)})
-def upload_video(request):
-    if request.method == "POST":
-        video_file = request.FILES.get("video")
-        if video_file:
-            # You can process the video here (save it to disk, process it, etc.)
-            return JsonResponse({"message": "Video uploaded successfully!"})
-        return JsonResponse({"error": "No video file provided"}, status=400)
-    return JsonResponse({"error": "Invalid request"}, status=400)
+from proctoring.detection_classes.centralisedDatabaseOps import DatabaseOps
+
+def fetch_image_by_name(request, name):
+    dbOps = DatabaseOps()
+    image, status, message = dbOps.take_photo_from_database(name)
+
+    if status and image:
+        buffered = BytesIO()
+        image.save(buffered, format="PNG")
+        img_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        return JsonResponse({
+            "success": True,
+            "message": message,
+            "base64": img_base64,
+            "name": name,
+        })
+    else:
+        return JsonResponse({
+            "success": False,
+            "message": message,
+            "base64": None,
+        })
 
 
