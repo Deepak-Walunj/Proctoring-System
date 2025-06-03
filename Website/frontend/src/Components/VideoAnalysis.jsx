@@ -1,277 +1,4 @@
-// import React, { useState, useEffect, useRef } from "react";
-// import axios from "axios";
-// import { toast } from "react-toastify";
-// import VideoCameraFrontIcon from "@mui/icons-material/VideoCameraFront";
-// import Backdrop from "@mui/material/Backdrop";
-// import CircularProgress from "@mui/material/CircularProgress";
-// import Typography from "@mui/material/Typography"; // Import Typography for text styling
-
-// const URL = import.meta.env.VITE_PORT_URL;
-// const WS_URL = "ws://localhost:8000/ws/proctoring/";
-
-// const VideoAnalysis = ({ endviva, username, vivaID, vivaHandler }) => {
-// const videoRef = useRef(null);
-// const canvasRef = useRef(null);
-// const [mediaRecorder, setMediaRecorder] = useState(null);
-// const [recordedChunks, setRecordedChunks] = useState([]);
-// const [signalingSocket, setSignalingSocket] = useState(null);
-// const [frameInterval, setFrameInterval] = useState(null);
-// const [currentInstruction, setCurrentInstruction] = useState(null);
-// const [prevInstruction, setPrevInstruction] = useState(null);
-// const [uploading, setUploading] = useState(false); // State to control the backdrop
-// const [verificationResult, setVerificationResult] = useState(null);
-
-// useEffect(() => {
-// if (!endviva) {
-//     startVideoAndRecording();
-// } else {
-//     stopRecordingAndCleanup();
-// }
-// return () => {
-//     if (endviva) {
-//         stopRecordingAndCleanup();
-//     };
-//     }
-// }, [endviva]);
-
-// const startVideoAndRecording = async () => {
-// try {
-//     const stream = await navigator.mediaDevices.getUserMedia({
-//     video: { facingMode: "user", width: 800, height: 400 },
-//     audio: true,
-//     });
-
-//     videoRef.current.srcObject = stream;
-
-//     const chunks = [];
-//     const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
-//     recorder.ondataavailable = (event) => {
-//     if (event.data.size > 0) {
-//         chunks.push(event.data);
-//     }
-//     };
-
-//     recorder.onstop = async () => {
-//     setRecordedChunks(chunks);
-//     console.log("Recording complete, chunks:", chunks);
-//     await uploadRecordedVideo(chunks);
-//     };
-
-//     setMediaRecorder(recorder);
-//     recorder.start();
-
-//     initWebSocket(stream);
-//     toast.success("Recording and streaming started!");
-//     console.log("Recording and streaming started!");
-// } catch (error) {
-//     console.error("Error accessing camera:", error);
-//     toast.error("Failed to start camera or recording.");
-// }
-// };
-
-// const stopRecordingAndCleanup = () => {
-// if (mediaRecorder && mediaRecorder.state === "recording") {
-//     mediaRecorder.stop();
-//     toast.info("Recording stopped.");
-// }
-// if (videoRef.current?.srcObject) {
-//     console.log("Stopping video stream...");
-//     const tracks = videoRef.current.srcObject.getTracks();
-//     tracks.forEach((track) => track.stop());
-//     videoRef.current.srcObject = null;
-// }
-// if (signalingSocket) {
-//     signalingSocket.close();
-//     setSignalingSocket(null);
-// }
-// if (frameInterval) {
-//     clearInterval(frameInterval);
-//     setFrameInterval(null);
-// }
-// setRecordedChunks([]);
-// };
-// const initWebSocket = (stream) => {
-// const socket = new WebSocket(WS_URL);
-// setSignalingSocket(socket);
-// if (signalingSocket) {
-//     console.log("Closing WebSocket connection...");
-//     signalingSocket.close();
-//     setSignalingSocket(null);
-//     }
-
-// socket.onopen = () => {
-//     console.log("Connected to signaling server");
-//     captureAndSendFrames(stream, socket);
-// };
-
-// socket.onmessage = (message) => {
-//     console.log("Raw message:", message.data);
-//     try {
-//         const data = JSON.parse(message.data);
-//         if (data.type === "instruction") {
-//             setCurrentInstruction(data.message);
-//         }
-//         else if (data.type === "verification") {
-//             console.log("Verification Results:", data.verificationResults);
-//             toast.info(data.verifyToast); 
-//             setVerificationResult(data);
-//         }
-//     } 
-//     catch (error) {
-//         console.error("Error parsing message:", error);
-//     }
-// };
-
-// socket.onerror = (error) => {
-//     console.error("Signaling server error:", error);
-// };
-
-// socket.onclose = () => {
-//     console.log("Disconnected from signaling server");
-//     if (verificationResult) {
-//         console.log("Final Verification Result:", verificationResult);
-//     }
-// };
-// };
-
-// useEffect(() => {
-// console.log("Current Instruction:", currentInstruction);
-// console.log("Previous Instruction:", prevInstruction);
-// if (
-//     currentInstruction &&
-//     (prevInstruction === null || currentInstruction !== prevInstruction)
-// ) {
-//     setPrevInstruction(currentInstruction);
-// }
-// }, [currentInstruction, prevInstruction]);
-
-// const captureAndSendFrames = (stream, socket) => {
-// const canvas = document.createElement("canvas");
-// const ctx = canvas.getContext("2d");
-// const video = videoRef.current;
-
-// const captureFrame = () => {
-//     canvas.width = video.videoWidth;
-//     canvas.height = video.videoHeight;
-//     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-//     const frameData = canvas.toDataURL("image/jpeg");
-//     console.log("Sending frame:", frameData.substring(0, 100));
-//     console.log(`Sending username: ${username}`);
-//     if (socket.readyState === WebSocket.OPEN) {
-//     socket.send(JSON.stringify({ type: "frame", frame: frameData , name: username}));
-//     }
-// };
-
-// const interval = setInterval(captureFrame, 1000);
-// setFrameInterval(interval);
-// };
-
-// const uploadRecordedVideo = async (chunks) => {
-// if (!chunks || chunks.length === 0) {
-//     console.error("No chunks available for upload.");
-//     return;
-// }
-
-// const blob = new Blob(chunks, { type: "video/webm" });
-// console.log("Blob size:", blob.size);
-// console.log("Blob type:", blob.type);
-
-// const formData = new FormData();
-// formData.append("video", blob, "recording.mp4");
-// formData.append("username", username);
-// formData.append("vivaID", vivaID);
-
-// let token = "";
-
-// try {
-//     const response = await axios.get(`${URL}/get-csrf-token`);
-//     token = response.data.csrfToken;
-//     console.log("CSRF token fetched:", token);
-// } catch (error) {
-//     console.error("Error fetching CSRF token:", error);
-// }
-
-// try {
-//     setUploading(true); // Show the backdrop
-//     const response = await axios.post(
-//     `${URL}/candidate/upload_video/`,
-//     formData,
-//     {
-//         headers: {
-//         "X-CSRFToken": token,
-//         },
-//     }
-//     );
-
-//     if (response.status === 200) {
-//     toast.success("Video uploaded successfully!");
-//     console.log("Video uploaded successfully!");
-//     } else {
-//     toast.error("Failed to upload video.");
-//     console.error("Upload failed:", response);
-//     }
-// } catch (error) {
-//     toast.error("Error uploading video.");
-//     console.error("Error:", error);
-// } finally {
-//     setUploading(false); // Hide the backdrop
-//     // window.location.reload();
-// }
-// };
-
-
-
-// return (
-// <div className="bg-white shadow-md border rounded-md w-full h-full p-2 border-black relative">
-//     {/* Backdrop for Uploading */}
-//     <Backdrop
-//     sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-//     open={uploading}
-//     onClick={() => {}}
-//     >
-//     <div style={{ textAlign: "center" }}>
-//         <CircularProgress color="inherit" />
-//         <Typography variant="body1" sx={{ mt: 2 }}>
-//         Do not reload the screen. Processing of uploading video.
-//         </Typography>
-//     </div>
-//     </Backdrop>
-
-//     <div className="relative w-full h-full">
-//     <p className="absolute top-0 left-1/2 transform -translate-x-1/2 text-xs sm:text-xs md:text-xl lg:text-xl font-semibold text-center text-black bg-gray-100 p-1 rounded-md z-10">
-//         {currentInstruction}
-//     </p>
-//     {verificationResult && (
-//     <div className="absolute top-16 left-1/2 transform -translate-x-1/2 bg-red-500 text-white p-2 rounded-md shadow-md z-20">
-//         <p>{verificationResult.message}</p>
-//     </div>
-//     )}
-//     {/* Video Element */}
-//     <video ref={videoRef} autoPlay muted className="w-full h-full object-fill" />
-//     <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full object-fill" />
-//     <VideoCameraFrontIcon
-//         className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2"
-//         style={{ fontSize: "3rem", color: "black" }}
-//     />
-//     </div>
-
-//     {/* End Viva Button */}
-//     <button
-//         className="absolute bottom-4 right-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-//         onClick={() => {
-//             stopRecordingAndCleanup();
-//             vivaHandler();
-//         }}
-//     >
-//         End Viva
-//     </button>
-
-// </div>
-// );
-// };
-
-// export default VideoAnalysis;
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router-dom"
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -279,10 +6,116 @@ import { useNavigate } from "react-router-dom";
 
 export default function VideoAnalysis(){
     const { name } = useParams();
+    const [perProcessData, setPerProcessData] = useState({
+        gaze_toast: "",
+        distance_toast: { toast: "", distance: 0 },
+        object_toast: "",
+        student_verification_toast: "",
+    });
+    const [finalResult, setFinalResult] = useState({
+        "id": 0,
+        "timestamp": 0,
+        "result_faceDetection": "",
+        "result_facePoints": "",
+        "gazeResult": {},
+        "object_detection_result": [],
+        "student_verification_result": {}, 
+    })
     const [image, setImage] = useState(localStorage.getItem("studentImage") || null);
     const [message, setMessage] = useState("");
-    const [isMounted, setIsMounted] = useState(true);
     const navigate = useNavigate()
+    const [vivaStarted, setVivaStarted] = useState(false)
+    const videoRef = useRef(null);
+    const canvasRef = useRef(null);
+    const streamRef = useRef(null);
+    const animationRef = useRef(null);
+    const ws = useRef(null);
+    const WS_URL = import.meta.env.VITE_REACT_APP_WS_URL;
+
+    useEffect(() => {
+    if (finalResult.length > 0) {
+        console.log("Final Result (from useEffect):", finalResult);
+    }
+}, [finalResult]);
+
+    const startCamera = async() =>{
+        try{
+            let lastSent = 0;
+            ws.current=new WebSocket(WS_URL);
+
+            ws.current.onopen=()=>{
+                toast.success("Websocket Opened Successfully")
+            }
+
+            ws.current.onmessage=(event)=>{
+                try{
+                    const data=JSON.parse(event.data)
+                    // console.log("Received from backend:", data);
+                    if (data.type==='fail'){
+                        toast.info(data.final_toast)
+                    }
+                    else if (data.type==='success'){
+                        // console.log(data.final_toast)
+                        // toast.success(data.final_toast)
+                        setPerProcessData(data.per_frame_result);
+                        console.log("Per Process Data:", data.per_frame_result);
+                    }
+
+                    if (data.type==='final'){
+                        setFinalResult(data.final_result);
+                    }
+                }catch(error){
+                    toast.error("Error processing data from server", error);
+                }
+            }
+
+            ws.current.onerror = (e) => {
+                toast.error("WebSocket connection error", e);
+            };
+            ws.current.onclose = () => {
+                toast.success("🛑 WebSocket Closed Successfully");
+            };
+            const stream=await navigator.mediaDevices.getUserMedia({video:true})
+            streamRef.current=stream
+            if(videoRef.current){
+                videoRef.current.srcObject=stream;
+            }
+            const captureFrames = () =>{
+                const video=videoRef.current;
+                const canvas=canvasRef.current;
+                const ctx=canvas?.getContext("2d");
+                if (video && canvas && ctx) {
+                    canvas.width=video.videoWidth;
+                    canvas.height=video.videoHeight;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const now = Date.now();
+                    if (ws.current && ws.current.readyState===WebSocket.OPEN && now-lastSent>1000){
+                        const frame=canvas.toDataURL("image/jpeg")
+                        ws.current.send(JSON.stringify({type:"frame", frame: frame, user_image:image}));
+                        lastSent=now
+                    }
+                    animationRef.current=requestAnimationFrame(captureFrames);
+                }
+            };
+            captureFrames();
+        }catch(error){
+            toast.error("Error starting camera", error.message);
+        }
+    }
+
+    const stopCamera = () =>{
+        if(streamRef.current){
+            streamRef.current.getTracks().forEach((track)=>track.stop());
+            streamRef.current=null
+        }
+        if(animationRef.current){
+            cancelAnimationFrame(animationRef.current)
+        }
+        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+            ws.current.close();
+            toast.success("Websocket Closed On End Viva Button")
+        }
+    }
 
     useEffect(() => {
         if(!localStorage.getItem("studentImage")){
@@ -315,30 +148,86 @@ export default function VideoAnalysis(){
     }
     },[name, navigate])
 
+    const handleStartViva = () => {
+        toast.success("Viva Started Successfully")
+        setVivaStarted(true)
+        startCamera()
+    }
+
     const handleEndViva = () => {
+        stopCamera()
+        setVivaStarted(false)
         toast.success("Viva ended successfully")
         setMessage("Viva ended successfully")
-        setIsMounted(false);
         localStorage.clear()
-        navigate("/InputDetails")
+        // navigate(0)
     };
 
-    if (!isMounted) return null;
+    useEffect(() => {
+        if (finalResult.length > 0) {
+            localStorage.setItem("finalResult", JSON.stringify(finalResult));
+        }
+    }, [finalResult]);
+
+    useEffect(() => {
+        const stored = localStorage.getItem("finalResult");
+        if (stored) setFinalResult(JSON.parse(stored));
+    }, []);
 
     return(
         <div style={{ padding: "2rem" }}>
             <h2>Welcome, {name}</h2>
             <p>{message}</p>
-            {image && (
+            {/* <p>{image}</p> */}
+            {/* {image && (
                 <img
                     src={`data:image/png;base64,${image}`}
                     alt="Registered face"
                     style={{ width: "200px", height: "200px", borderRadius: "8px", marginBottom: "20px" }}
                 />
+            )} */}
+            {!vivaStarted? 
+            (   
+                <button onClick={handleStartViva} style={{ padding: "10px 20px", marginTop: "10px" }}>Start Viva</button>
+            ):(
+                <>
+                <div style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "10px",
+                            zIndex: 10,
+                            backgroundColor: "rgba(0,0,0,0.5)",
+                            padding: "10px",
+                            borderRadius: "8px",
+                            color: "white",
+                            fontWeight: "bold"
+                    }}>
+                        <div>Gaze: {perProcessData.gaze_toast || "No data"}</div>
+                        <div>Object: {perProcessData.object_toast || "No data"}</div>
+                        <div>Student Verification: {perProcessData.student_verification_toast || "No data"}</div>
+                        <div>Distance Toast: {perProcessData.distance_toast?.toast || "No data"}</div>
+                        <div>Distance: {perProcessData.distance_toast?.distance?.toFixed(2) || "0.00"} cm</div>
+                    </div>
+                    <div style={{ position: "relative", width: "100%", maxWidth: "640px" }}>
+                        <video ref={videoRef} autoPlay muted style={{ width: "100%" }} />
+                        <canvas ref={canvasRef} style={{ display: "none" }} />
+                    </div>
+                    <button onClick={handleEndViva} style={{ padding: "10px 20px", marginTop: "10px" }}>
+                        End Viva
+                    </button>
+                    
+                </>
             )}
-            <button onClick={handleEndViva} style={{ padding: "10px 20px", marginTop: "10px" }}>
-                End Viva
-            </button>
+            {finalResult.length > 0 && (
+                <div style={{ marginTop: "20px" }}>
+                    <h3>📊 Final Viva Result Summary</h3>
+                    <ul>
+                        {finalResult.map((item, index) => (
+                            <li key={index}>{item}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
         </div>
     )
 }
