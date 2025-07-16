@@ -59,7 +59,14 @@ class ObjectDetectionModule:
         except Exception as e:
             print(f"[Error in detect_and_draw]: {e}")
             toast = "Error in object detection system"
-            return frame, cheating_material_status, self.object_count, toast 
+            return {
+                "status": False,
+                "message": "Error in object detection system",
+                "toast": toast,
+                "cheating_material_status": cheating_material_status,
+                "object_count": self.object_count,
+                "frame": frame,
+            }
         
         if detection_result and detection_result.detections:
             for detection in detection_result.detections:
@@ -97,7 +104,14 @@ class ObjectDetectionModule:
             y_position = top_left_y + (i + 1) * offset
             cv.putText(frame, f"{label.capitalize()} detected inside the box",
                     (top_left_x, y_position + int(height * 0.18)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
-        return frame, cheating_material_status, self.object_count, toast
+        return {
+            "status": True,
+            "message": "Object detection completed successfully",
+            "toast": toast,
+            "cheating_material_status": cheating_material_status,
+            "object_count": self.object_count,
+            "frame": frame,
+        }
 
     def detect_and_draw(self, frame):
         if not self.detector:

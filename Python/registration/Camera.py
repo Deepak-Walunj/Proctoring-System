@@ -4,6 +4,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from detection_classes.facePreprocessing import FacePreprocessing
 from detection_classes.objectDetection import ObjectDetectionModule
+from detection_classes.helperFunctions import faceDetection, faceMesh, singleFaceInsideBox, crop_face, detect_landmarks, align_face
 
 def initialize_camera(width=640, height=480, fps=1):
     toast=""
@@ -44,24 +45,28 @@ def main(object_detector, face_preprocessor, cap):
                 print("Failed to read from camera.")
                 break
             clean_frame= frame.copy()
-            faceDetection_status, result_faceDetection, fDetection_toast=face_preprocessor.faceDetection(frame)
-            if not faceDetection_status:
-                print(fDetection_toast)
-                exit()
-            facePoint_status, result_facePoints, mDetection_toast=face_preprocessor.faceMesh(frame)
-            if not facePoint_status:
-                print(mDetection_toast)
-                exit()
-            frame, looking_straight_status, gaze_toast, gaze_result=face_preprocessor.gaze(frame, result_facePoints)
-            frame, minDistance_status, maxDistance_status, inRange_status, distance, minD_toast=face_preprocessor.minDistance(clean_frame, result_faceDetection)
-            frame, singleFace_status, box_faces, non_box_faces, singleF_toast= face_preprocessor.singleFaceInsideBox(frame, result_faceDetection)
-            frame, cheating_status, object_count, objectDetectionToast=object_detector.detect_cheating(clean_frame)
-            cv.imshow("Camera", frame)
+            faceDetectionResponse=faceDetection(frame)
+            if not faceDetectionResponse["status"]:
+                print(faceDetectionResponse["toast"])
+                cap.release()
+                cv.destroyAllWindows()
+                return False, None, faceDetectionResponse["toast"]
+            faceMeshResponse=faceMesh(clean_frame)
+            if not faceMeshResponse["status"]:
+                print(faceMeshResponse["toast"])
+                cap.release()
+                cv.destroyAllWindows()
+                return False, None, faceDetectionResponse["toast"]
+            gazeResult=face_preprocessor.gaze(frame, faceMeshResponse["result"])
+            minDistanceResult=face_preprocessor.minDistance(gazeResult["frame"], faceDetectionResponse["result"])
+            singleFaceInsideBoxResult= singleFaceInsideBox(minDistanceResult["frame"], faceDetectionResponse["result"])
+            objectDetectionResult=object_detector.detect_cheating(singleFaceInsideBoxResult["frame"])
+            # cv.imshow("Camera", )
             font_scale = 0.5  
             thickness = 2
             height, width, _ = frame.shape
             bottom_right_x, bottom_right_y = int(width * 0.0), int(height * 0.9)
-            cv.imshow("Camera", frame)
+            cv.imshow("Camera", objectDetectionResult["frame"])
             key = cv.waitKey(1)
             if key == 27:  # ESC
                 print("Exiting...")
@@ -70,75 +75,74 @@ def main(object_detector, face_preprocessor, cap):
                 return False, None, "Program exited"
             elif key == 13 or capture_image:
                 capture_image=False
-                if singleFace_status and box_faces==1 and not cheating_status and inRange_status and looking_straight_status:
+                if singleFaceInsideBoxResult["singleFaceStatus"] and singleFaceInsideBoxResult["boxFaces"]==1 and not objectDetectionResult["cheating_material_status"] and minDistanceResult["inRange_status"] and gazeResult["looking_straight_status"]:
                     cv.putText(frame, "Face Captured", 
                         (bottom_right_x, bottom_right_y + int(height * 0.03)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 255, 0), thickness)
                     cv.imshow("Camera", frame)
                     cv.waitKey(1000)
                     print("Size of the taken image:", clean_frame.shape)
                     
-                    cropFace_status, cropped_face, cropF_toast=face_preprocessor.crop_face(clean_frame, result_faceDetection)
-                    if cropFace_status==False:
-                        print(cropF_toast)
+                    cropResult=crop_face(clean_frame, faceDetectionResponse["result"])
+                    if cropResult["cropFaceStatus"]==False:
+                        print(cropResult["toast"])
                         cap.release()
                         cv.destroyAllWindows()
-                        return False, None, cropF_toast
+                        return False, None, cropResult["toast"]
                     else:
-                        print(cropF_toast)
-                    
-                    detectLandmarks_status, tobe_align_face, count_final_landmarks, left_eye_landmark, right_eye_landmark, landmark_toast=face_preprocessor.detect_landmarks(cropped_face, result_facePoints)
-                    if detectLandmarks_status==False:
-                        print(landmark_toast)
+                        print(cropResult["toast"])
+                    landmarkResult=detect_landmarks(cropResult["frame"], faceMeshResponse["result"])
+                    if landmarkResult["detectLandmarksStatus"]==False:
+                        print(landmarkResult["toast"])
                         cap.release()
                         cv.destroyAllWindows()
-                        return False, None, landmark_toast
-                    elif left_eye_landmark is  None or right_eye_landmark is None:
+                        return False, None, landmarkResult["toast"]
+                    elif landmarkResult["leftEyeLandmarks"] is None or landmarkResult["rightEyeLandmarks"] is None:
                         landmark_toast="Not able to find the eyes landmarks! Something is obstructing!"
                         print(landmark_toast)
                         cap.release()
                         cv.destroyAllWindows()
-                        return False, None, landmark_toast
-                    elif count_final_landmarks <468:
+                        return False, None, landmarkResult["toast"]
+                    elif landmarkResult["countLandmarks"] <468:
                         landmark_toast="Not enough landmarks detected! Please try again"
                         print(landmark_toast)
                         cap.release()
                         cv.destroyAllWindows()
-                        return False, None, landmark_toast
+                        return False, None, landmarkResult["toast"]
                     else:
-                        print(landmark_toast)
-                    alignFace_status, final_align_face, fAlign_toast=face_preprocessor.align_face(tobe_align_face, left_eye_landmark, right_eye_landmark)
-                    if alignFace_status==False:
-                        print(fAlign_toast)
+                        print(landmarkResult["toast"])
+                    alignResult=align_face(landmarkResult["frame"], landmarkResult["leftEyeLandmarks"], landmarkResult["rightEyeLandmarks"])
+                    if alignResult["alignFaceStatus"]==False:
+                        print(alignResult["toast"])
                         cap.release()
                         cv.destroyAllWindows()
-                        return False, None, fAlign_toast
+                        return False, None, alignResult["toast"]
                     else:
-                        print(fAlign_toast)
+                        print(alignResult["toast"])
                         cap.release()
                         cv.destroyAllWindows()
-                        return True, final_align_face, fAlign_toast
-                elif not looking_straight_status:
-                    cv.putText(frame, gaze_toast, 
+                        return True, alignResult["frame"], alignResult["toast"]
+                elif not gazeResult["looking_straight_status"]:
+                    cv.putText(frame, gazeResult["toast"], 
                         (bottom_right_x, bottom_right_y + int(height * 0.03)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
                     cv.imshow("Camera", frame)
                     cv.waitKey(1000)
-                elif not singleFace_status and box_faces>1 and non_box_faces>1 and not cheating_status:
+                elif not singleFaceInsideBoxResult["singleFaceStatus"] and singleFaceInsideBoxResult["boxFaces"]>1 and not objectDetectionResult["cheating_material_status"]:
                     cv.putText(frame, "multiple faces detected", 
                         (bottom_right_x, bottom_right_y + int(height * 0.03)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
                     cv.imshow("Camera", frame)
                     cv.waitKey(1000)
-                elif not singleFace_status and box_faces<1 and not cheating_status:
+                elif not singleFaceInsideBoxResult["singleFaceStatus"] and singleFaceInsideBoxResult["boxFaces"]<1 and not objectDetectionResult["cheating_material_status"]:
                     cv.putText(frame, "No face detected", 
                         (bottom_right_x, bottom_right_y + int(height * 0.03)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
                     cv.imshow("Camera", frame)
                     cv.waitKey(1000)
-                elif cheating_status and singleFace_status and box_faces==1 and inRange_status:
-                    cv.putText(frame, f"{objectDetectionToast}", 
+                elif objectDetectionResult["cheating_material_status"] and singleFaceInsideBoxResult["singleFaceStatus"] and singleFaceInsideBoxResult["boxFaces"]==1 and minDistanceResult["inRange_status"]:
+                    cv.putText(frame, f"{objectDetectionResult['toast']}", 
                         (bottom_right_x, bottom_right_y + int(height * 0.03)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
                     cv.imshow("Camera", frame)
                     cv.waitKey(1000)
-                elif singleFace_status and not inRange_status and not cheating_status:
-                    cv.putText(frame, f"Distance: {int(distance)} cm", 
+                elif singleFaceInsideBoxResult["singleFaceStatus"] and not minDistanceResult["inRange_status"] and not objectDetectionResult["cheating_material_status"]:
+                    cv.putText(frame, f"Distance: {int(minDistanceResult['closest_distance'])} cm", 
                         (bottom_right_x, bottom_right_y + int(height * 0.03)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
                     cv.imshow("Camera", frame)
                     cv.waitKey(1000)
@@ -156,7 +160,7 @@ def finalImage(object_detector, face_preprocessor):
     # object_detector = ObjectDetectionModule()
     # face_preprocessor = FacePreprocessing()
     camStart_status, cam, cam_toast = initialize_camera()
-    print(cam_toast)
+    # print(cam_toast)
     if camStart_status==True:
         print("Successfully initialised the camera!")
         condF, final_image, toast = main(object_detector, face_preprocessor, cam)
@@ -172,7 +176,7 @@ def finalImage(object_detector, face_preprocessor):
             return condF, None
     else:
         print("Camera not initialized properly!")
-    return condF, None
+        return False, None
 if __name__ == "__main__":
     object_detector = ObjectDetectionModule()
     face_preprocessor = FacePreprocessing()

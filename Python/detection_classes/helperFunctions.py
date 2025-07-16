@@ -1,6 +1,7 @@
 from deepface import DeepFace
 import cv2 as cv
 import mediapipe as mp
+import numpy as np
 
 
 mp_face_detection = mp.solutions.face_detection
@@ -96,4 +97,190 @@ def singleFaceInsideBox(face, result_faceDetection):
     else:
         toast= "No face detected"
         cv.putText(face, toast, (top_left_x, top_left_y + int(height * 0.08)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
-    return face, single_face_status, box_faces, non_box_faces, toast
+    return {
+            "status": True,
+            "message": "singleFaceInsideBox function executed successfully",
+            "singleFaceStatus": single_face_status,
+            "boxFaces": box_faces,
+            "nonBoxFaces": non_box_faces,
+            "toast": toast,
+            "frame": face,
+        }
+
+def crop_face(face, result_faceDetection):
+    cropFace_status=False
+    toast=""
+    try:
+        clean_face = face.copy()
+        if result_faceDetection.detections:
+                for detection in result_faceDetection.detections:
+                    bbox = detection.location_data.relative_bounding_box
+                    h, w, _ = face.shape
+                    xmin = int(bbox.xmin * w)
+                    ymin = int(bbox.ymin * h)
+                    box_width = int(bbox.width * w)
+                    box_height = int(bbox.height * h)
+                    # Draw bounding box
+                    cv.rectangle(face, (xmin, ymin), (xmin + box_width, ymin + box_height), (0, 255, 0), 2)
+                    # print("  Bounding Box:")
+                    # print(f"    xmin: {bbox.xmin}")
+                    # print(f"    ymin: {bbox.ymin}")
+                    # print(f"    width: {bbox.width}")
+                    # print(f"    height: {bbox.height}")
+        else:
+            toast="No faces detected"
+            return cropFace_status, face, toast
+        padding_factor = 1.3  # Increase bounding box by 20%
+        padding_x = int(box_width * (padding_factor - 1) / 2)
+        padding_y = int(box_height * (padding_factor - 1) / 2)
+        x = max(0, xmin - padding_x)
+        y = max(0, ymin - padding_y)
+        xmax = min(face.shape[1], xmin + box_width + padding_x)
+        ymax = min(face.shape[0], ymin + box_height + padding_y)
+        cropped_face = clean_face[y:ymax, x:xmax]
+        if cropped_face.size == 0 or cropped_face.shape[0] == 0 or cropped_face.shape[1] == 0:
+            cropFace_status=False
+            toast="Error: Cropped region is invalid due to obstacles or incorrect bounding box"
+            return cropFace_status, face, toast
+        # print("Cropped face successfully extracted.")
+        cv.imshow("Cropped face", cropped_face)
+        cv.imwrite("resultImages/Cropped image.jpg", cropped_face)
+        cv.waitKey(250)
+        cropFace_status=True
+        toast="Face cropped successfully"
+        return {
+            "status": True,
+            "message": "Face cropped successfully",
+            "cropFaceStatus": cropFace_status,
+            "toast": toast,
+            "frame": cropped_face
+        }
+    except Exception as e:
+        print(f"[Error] in cropping the face: {e}")
+        toast="Error in cropping system"
+        return {
+            "status": False,
+            "message": "Error in cropping the face",
+            "cropFaceStatus": cropFace_status,
+            "toast": toast,
+            "frame": face
+        }
+    
+def detect_landmarks(face, result_facePoints):
+    detectLandmarks_status=False
+    toast=""
+    try:
+        clean_face=face.copy()
+        h, w, _ = face.shape
+        # print(h,w)
+        if h != w:
+            size = max(h, w)
+            face = cv.resize(face, (size, size))
+            h, w = size, size
+        if result_facePoints.multi_face_landmarks:
+            for face_landmarks in result_facePoints.multi_face_landmarks:
+                landmarks = []
+                left_eye_landmarks_raw = []
+                right_eye_landmarks_raw = []
+                # Extract relevant landmarks for both eyes
+                # Left eye landmarks (from the provided indices)
+                left_eye_landmarks_raw.extend([face_landmarks.landmark[i] for i in [468, 469, 470, 471, 472]])
+                # Right eye landmarks (from the provided indices)
+                right_eye_landmarks_raw.extend([face_landmarks.landmark[i] for i in [473, 474, 475, 476, 477]])
+                left_eye_landmarks = [(landmark.x * face.shape[1], landmark.y * face.shape[0]) for landmark in left_eye_landmarks_raw]
+                right_eye_landmarks = [(landmark.x * face.shape[1], landmark.y * face.shape[0]) for landmark in right_eye_landmarks_raw]
+                # Loop through the 468 landmarks
+                for i in range(468):
+                    x_float = face_landmarks.landmark[i].x * w
+                    y_float = face_landmarks.landmark[i].y * h
+                    landmarks.append((x_float, y_float))
+                    x_int = int(x_float)
+                    y_int = int(y_float)
+                    cv.circle(face, (x_int, y_int), 2, (0, 255, 0), -1) 
+                detectLandmarks_status=True
+                count_landmarks= len(landmarks)
+                toast="Successfully captured landmarks!"
+            cv.imshow("Landmarked face", face,)
+            cv.imwrite("resultImages/Landmark detected image.jpg", face)
+            cv.waitKey(250)
+            return {
+                "status": True,
+                "message": "Landmarks detected successfully",
+                "detectLandmarksStatus": detectLandmarks_status,
+                "countLandmarks": count_landmarks,
+                "leftEyeLandmarks": left_eye_landmarks,
+                "rightEyeLandmarks": right_eye_landmarks,
+                "toast": toast,
+                "frame": clean_face
+            } 
+        else:
+            print("No landmarks found! Please clear the obstacles and try again")
+            toast="No landmarks found"
+            return {
+                "status": True,
+                "message": "No landmarks found",
+                "detectLandmarksStatus": detectLandmarks_status,
+                "countLandmarks": None,
+                "leftEyeLandmarks": None,
+                "rightEyeLandmarks": None,
+                "toast": toast,
+                "frame": clean_face
+            } 
+    except Exception as e:
+        print(f"[Error] occurred while detecting face landmarks: {e}")
+        toast="Error in landmark detection"
+        return {
+            "status": False,
+            "message": "Unsuccessful in detecting landmarks",
+            "detectLandmarksStatus": detectLandmarks_status,
+            "countLandmarks": None,
+            "leftEyeLandmarks": None,
+            "rightEyeLandmarks": None,
+            "toast": toast,
+            "frame": clean_face
+        }
+
+def align_face(face, left_eye_landmarks, right_eye_landmarks):
+    toast=""
+    alignFace_status=False
+    try:
+        # Convert landmarks to numpy arrays for better precision
+        left_eye_landmarks = np.array(left_eye_landmarks, dtype=np.float32)
+        right_eye_landmarks = np.array(right_eye_landmarks, dtype=np.float32)
+        # Calculate the centers of both eyes
+        left_eye_center = np.mean(left_eye_landmarks, axis=0)
+        right_eye_center = np.mean(right_eye_landmarks, axis=0)
+        # Compute the midpoint between the eyes
+        eye_center = ((left_eye_center[0] + right_eye_center[0]) / 2, 
+                    (left_eye_center[1] + right_eye_center[1]) / 2)
+        # Calculate the angle of rotation (clockwise)
+        delta_x = right_eye_center[0] - left_eye_center[0]
+        delta_y = right_eye_center[1] - left_eye_center[1]
+        angle = np.degrees(np.arctan2(delta_y, delta_x))
+        # Create the rotation matrix
+        center = (int(eye_center[0]), int(eye_center[1]))
+        rotation_matrix = cv.getRotationMatrix2D(center, angle, scale=1)
+        # Apply the rotation to align the face
+        aligned_face = cv.warpAffine(face, rotation_matrix, (face.shape[1], face.shape[0]), flags=cv.INTER_CUBIC)
+        alignFace_status=True
+        toast="Face aligned successfully"
+        cv.imwrite("resultImages/align.jpg", aligned_face)
+        cv.imshow("Aligned image", aligned_face)
+        cv.waitKey(250)
+        return {
+            "status": True,
+            "message": "Face aligned successfully",
+            "alignFaceStatus": alignFace_status,
+            "frame": aligned_face,
+            "toast": toast,
+        } 
+    except Exception as e:
+        print(f"[Error] during face alignment: {e}")
+        toast="Error in aligning system"
+        return {
+            "status": False,
+            "message": "Face alignment failed",
+            "alignFaceStatus": alignFace_status,
+            "frame": None,
+            "toast": toast,
+        }
