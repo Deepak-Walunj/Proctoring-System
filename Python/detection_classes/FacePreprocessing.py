@@ -1,26 +1,17 @@
 import cv2 as cv
 import numpy as np
-import mediapipe as mp
 import time
+from helperFunctions import faceDetection, faceMesh
 
 class FacePreprocessing:
     def __init__(self):
-        self.mp_face_detection = mp.solutions.face_detection
-        self.mp_face_mesh = mp.solutions.face_mesh
-        self.face_detection = self.mp_face_detection.FaceDetection(min_detection_confidence=0.7)
-        self.face_mesh = self.mp_face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1, refine_landmarks=True, min_detection_confidence=0.7, min_tracking_confidence=0.5)
-        self.mp_drawing = mp.solutions.drawing_utils
-        self.threshold_distance = 25
+        self.min_threshold_distance = 25
         self.max_threshold_distance = 35
+        
+        self.faceDetectionResult=False
+        
         self.x = 0  # X-axis head pose
         self.y = 0  # Y-axis head pose
-        self.X_AXIS_CHEAT = 0
-        self.Y_AXIS_CHEAT = 0
-        self.faceDetectionResult={
-                "single":False,
-                "multiple":False,
-                "no":True
-                }
         self.gaze_result = {
                     "Left": 0,
                     "Right": 0,
@@ -32,51 +23,6 @@ class FacePreprocessing:
         self.prev_gaze="Forward"
         self.gaze_locked = False
         self.gaze_tracking=dict()
-        
-    def faceDetection(self, frame):
-        faceDetection_status=False
-        toast=""
-        try:
-            rgb_frame=cv.cvtColor(frame,cv.COLOR_BGR2RGB)
-            result_detection=self.face_detection.process(rgb_frame)
-            faceDetection_status=True
-            toast="Face detection system initialised successfully"
-        except Exception as e:
-            print(f"[ERROR] detecting face: {e}")
-            toast="Error in face detecting system"
-            result_detection=None
-        
-        return faceDetection_status, result_detection, toast
-    
-    def faceMesh(self, frame):
-        facePoint_status=False
-        toast=""
-        try:
-            result_facePoints=self.face_mesh.process(frame)
-            facePoint_status=True
-            toast="Face Mesh system initialised successfully"
-        except Exception as e:
-            print(f"[ERROR] detecting face points: {e}")
-            result_facePoints=None
-            toast="Error in face mesh detecting system"
-        return facePoint_status, result_facePoints, toast
-    
-    def draw_dynamic_box(self,frame):
-        try:
-            height, width, _ = frame.shape
-            box_coords = (int(width * 0.3), int(height * 0.2), int(width * 0.4), int(height * 0.6))
-            top_x, top_y = int(width * 0.05), int(height * 0.05)
-            font_scale=0.5
-            thickness=2
-            box_x, box_y, box_w, box_h = box_coords
-            cv.rectangle(frame, (box_x, box_y), (box_x + box_w, box_y + box_h), (0, 0, 255), 2)
-            cv.putText(frame, "Press 'ENTER' to capture photo when your face is inside the box",
-                    (top_x,top_y), cv.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), thickness)
-            cv.putText(frame, "Press 'ESC' to quit",
-                    (top_x,top_y+ int(height * 0.04)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), thickness)
-        except Exception as e:
-            print(f"[ERROR] drawing the central bounding box :{e}")
-            exit()
         
     def gaze(self, face, result_facePoint):
         try:
@@ -159,11 +105,10 @@ class FacePreprocessing:
                         del self.gaze_tracking[gaze]
                     
                     for gaze in detected_labels:
-                        if self.gaze_tracking[gaze][0] == 10:  # First detection after 20 frames
+                        if self.gaze_tracking[gaze][0] == 20:  # First detection after 20 frames
                             self.gaze_result[gaze] += 1
                     self.prev_gaze = curr_gaze
                     toast = text
-                    return face, looking_straight_status, toast, self.gaze_result
             else:
                 text = "Something is obstructing the face"
                 toast = text
@@ -190,50 +135,25 @@ class FacePreprocessing:
                         self.gaze_result[gaze] += 1
                 
                 self.prev_gaze = "Obstruct"
-                return face, looking_straight_status, toast, self.gaze_result
-
+            return {
+                "status": True,
+                "message": "Gaze tracking successful",
+                "gaze_result": self.gaze_result,
+                "toast": toast,
+                "looking_straight_status": looking_straight_status,
+                "frame": face
+                }
         except Exception as e:
             print(f"[ERROR] face gazing system: {e}")
             toast = "Error in face gazing system"
-            return face, looking_straight_status, toast, self.gaze_result
-    
-    def singleFaceInsideBox(self, face, result_faceDetection):
-        toast=""
-        font_scale = 0.5  
-        thickness = 2
-        height, width, _ = face.shape
-        box_coords = (int(width * 0.3), int(height * 0.2), int(width * 0.4), int(height * 0.6))
-        top_left_x, top_left_y = int(width * 0.05), int(height * 0.05)
-        self.draw_dynamic_box(face)
-        single_face_status=False
-        box_faces=0
-        non_box_faces=0
-        if result_faceDetection.detections:
-            for detection in result_faceDetection.detections:
-                bboxC = detection.location_data.relative_bounding_box
-                x, y, w, h = (int(bboxC.xmin * width), int(bboxC.ymin * height),
-                            int(bboxC.width * width), int(bboxC.height * height))
-                if (box_coords[0] < x < box_coords[0] + box_coords[2] and
-                        box_coords[1] < y < box_coords[1] + box_coords[3] and
-                        box_coords[0] < x + w < box_coords[0] + box_coords[2] and
-                        box_coords[1] < y + h < box_coords[1] + box_coords[3]):
-                    box_faces += 1
-                else:
-                    non_box_faces += 1
-            if box_faces == 0:
-                toast= "Please be inside the box"
-                cv.putText(face,toast, (top_left_x, top_left_y + int(height * 0.08)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
-            elif box_faces == 1 and non_box_faces == 0:
-                toast="Single face detected inside the box"
-                single_face_status = True
-                cv.putText(face, toast, (top_left_x, top_left_y + int(height * 0.08)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 255, 0), thickness)
-            elif box_faces > 1 or non_box_faces > 0:
-                toast=f"Multiple faces detected :{box_faces + non_box_faces}"
-                cv.putText(face, toast, (top_left_x, top_left_y + int(height * 0.08)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
-        else:
-            toast= "No face detected"
-            cv.putText(face, toast, (top_left_x, top_left_y + int(height * 0.08)), cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
-        return face, single_face_status, box_faces, non_box_faces, toast
+            return {
+                "status": False,
+                "message": "Gaze tracking unsuccessful",
+                "gaze_result": self.gaze_result,
+                "toast": toast,
+                "looking_straight_status": looking_straight_status,
+                "frame": face
+                }
     
     def minDistance(self, face, result_faceDetection):
         toast=""
@@ -256,8 +176,8 @@ class FacePreprocessing:
                     distance = 5000 / face_width
                     if distance < closest_distance:
                         closest_distance = distance
-                if closest_distance < self.threshold_distance:
-                    warning_message = f"Too close: < {self.threshold_distance} cm"
+                if closest_distance < self.min_threshold_distance:
+                    warning_message = f"Too close: < {self.min_threshold_distance} cm"
                     cv.putText(face, warning_message,
                             (top_left_x, top_left_y + int(height * 0.12)),
                             cv.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 255), thickness)
@@ -279,64 +199,55 @@ class FacePreprocessing:
                     inRange_status=True
                     maxDistance_status=True
                 toast=warning_message
+            return {
+                "status": True,
+                "message": "Distance calculation successful",
+                "minDistance_status": minDistance_status,
+                "maxDistance_status": maxDistance_status,
+                "inRange_status": inRange_status,
+                "closest_distance": closest_distance,
+                "toast": toast,
+                "frame": face
+            }
         except Exception as e:
             print(f"[ERROR] in either detecting the face or calculating the min/max distance :{e}")
-        return face, minDistance_status, maxDistance_status, inRange_status, closest_distance, toast
-    
-    def detect_faces(self, face, result_faceDetection):
-        toast=""
-        faceDetected_status=False
-        try:
-            clean_face = face.copy()
-            if result_faceDetection.detections:
-                for i, detection in enumerate(result_faceDetection.detections):
-                    # print(detection)
-                    faces= i+1
-                    # print(f"Face: {faces}")
-                    # print(f"  Score: {detection.score[0]}")
-                    # Print bounding box
-                    bbox = detection.location_data.relative_bounding_box
-                    h, w, _ = face.shape
-                    xmin = int(bbox.xmin * w)
-                    ymin = int(bbox.ymin * h)
-                    box_width = int(bbox.width * w)
-                    box_height = int(bbox.height * h)
-                    # Draw bounding box
-                    # print("  Bounding Box:")
-                    # print(f"    xmin: {bbox.xmin}")
-                    # print(f"    ymin: {bbox.ymin}")
-                    # print(f"    width: {bbox.width}")
-                    # print(f"    height: {bbox.height}")
-                    faceDetected_status=True
-                toast="Face detected"
-                return faceDetected_status, clean_face, faces, toast
-            else:
-                faceDetected_status=False
-                toast="No faces detected"
-                return faceDetected_status, clean_face, 0, toast
-        except Exception as e:
-            print(f"[Error] detecting faces: {e}")
-            toast="Error in deteting faces"
-            return faceDetected_status, clean_face, 0, toast
+            return{
+                "status": False,
+                "message": "Error in distance calculation",
+                "minDistance_status": False,
+                "maxDistance_status": False,
+                "inRange_status": False,
+                "closest_distance": None,
+                "toast": None,
+                "frame": face
+            }
     
     def detectFaces(self, frame, result_detection):
         try:
-            faceCount = len(result_detection.detections) if result_detection.detections else 0
-            if faceCount == 1:
-                self.faceDetectionResult = {"single": True, "multiple": False, "no": False}
-                toast = "Single face detected"
-            elif faceCount > 1:
-                self.faceDetectionResult = {"single": False, "multiple": True, "no": False}
-                toast = "Multiple faces detected"
-            else:
-                self.faceDetectionResult = {"single": False, "multiple": False, "no": True}
+            face_count = len(result_detection.detections) if result_detection and result_detection.detections else 0
+            if face_count == 0:
                 toast = "No face detected"
-            return self.faceDetectionResult, toast
+                faceDetection_status = False
+            elif face_count == 1:
+                toast = "Single face detected"
+                faceDetection_status = True
+            else:
+                toast = f"Multiple faces detected: {face_count}"
+                faceDetection_status = True
+            # print(toast)
+            return {
+                "status": faceDetection_status,
+                "face_count": face_count,
+                "message": toast
+            }
         except Exception as e:
-            print(f"[ERROR] while detecting faces: {e}")
-            toast=f"ERROR] while detecting faces: {e}"
-            return None, toast
-        
+            print(f"[ERROR] in detectFaces: {e}")
+            return {
+                "status": False,
+                "face_count": 0,
+                "message": "Error in face counting system"
+            }
+    
     def crop_face(self,face, result_faceDetection):
         cropFace_status=False
         toast=""
@@ -484,7 +395,7 @@ def initialize_camera(width=640, height=480, fps=1):
         toast="Error initialising camera"
         return camStart_status, None, toast
 
-def main(cap, face_preprocessor):
+def main(cap, obj1):
     try:
         capture_status=False
         preprocessedImage_status=False
@@ -496,16 +407,16 @@ def main(cap, face_preprocessor):
                 print("Failed to read from camera.")
                 break
             clean_frame= frame.copy()
-            faceDetection_status, result_faceDetection, fDetection_toast=obj.faceDetection(frame)
-            facePoint_status, result_facePoints, mDetection_toast=obj.faceMesh(frame)
-            frame, looking_straight_status, gaze_toast, gResult=obj.gaze(frame, result_facePoints)
-            frame, minDistance_status, maxDistance_status, inRange_status, distance, distance_toast=obj.minDistance(frame, result_faceDetection)
-            print(gResult)
-            multipleFaceResult, toast=obj.detectFaces(frame, result_faceDetection)
-            print(multipleFaceResult)
+            faceDetectionResponse=faceDetection(frame)
+            faceMeshResponse=faceMesh(frame)
+            gazeResult=obj1.gaze(frame, faceMeshResponse['result'])
+            minDistanceResult=obj1.minDistance(gazeResult["frame"], faceDetectionResponse['result'])
+            print(gazeResult['gaze_result'])
+            faceDetectionResult=obj1.detectFaces(minDistanceResult["frame"], faceDetectionResponse['result'])
+            print(faceDetectionResult['face_count'])
+            # cv.imshow("Camera", frame)
+            # processed_frame, single_face_status, box_faces, non_box_faces, singleFace_toast = obj.singleFaceInsideBox(frame, faceDetectionResponse['result'])
             cv.imshow("Camera", frame)
-            processed_frame, single_face_status, box_faces, non_box_faces, singleFace_toast = obj.singleFaceInsideBox(frame, result_faceDetection)
-            cv.imshow("Camera", processed_frame)
             key = cv.waitKey(1)
             elapsed_time=time.time()
             sleep_time = max(0, 0.1 - elapsed_time)
@@ -517,7 +428,7 @@ def main(cap, face_preprocessor):
                 return capture_status,preprocessedImage_status, None
             elif key == 13 :
                 capture_status=True
-                faceDetected_status, detected_face, total_faces, faceDetect_toast=obj.detect_faces(clean_frame, result_faceDetection)
+                faceDetected_status, detected_face, total_faces, faceDetect_toast=obj1.detect_faces(clean_frame, faceDetectionResponse['result'])
                 cv.imshow("Face Detected", detected_face)
                 cv.waitKey(1000)
                 if faceDetected_status==False or total_faces==0:
@@ -532,7 +443,7 @@ def main(cap, face_preprocessor):
                 else:
                     print("Size of the detected image:", detected_face.shape)
                     
-                cropFace_status, cropped_face, crop_toast=obj.crop_face(detected_face, result_faceDetection)
+                cropFace_status, cropped_face, crop_toast=obj1.crop_face(detected_face, faceDetectionResponse['result'])
                 if cropFace_status==False:
                     cap.release()
                     cv.destroyAllWindows()
@@ -540,7 +451,7 @@ def main(cap, face_preprocessor):
                 else:
                     print("Size of the cropped image:", cropped_face.shape)
                     
-                detectLandmarks_status, tobe_align_face, count_final_landmarks, left_eye_landmark, right_eye_landmark, landmark_toast=obj.detect_landmarks(cropped_face, result_facePoints)
+                detectLandmarks_status, tobe_align_face, count_final_landmarks, left_eye_landmark, right_eye_landmark, landmark_toast=obj1.detect_landmarks(cropped_face, faceMeshResponse['result'])
                 if detectLandmarks_status is False:
                     cap.release()
                     cv.destroyAllWindows()
@@ -558,7 +469,7 @@ def main(cap, face_preprocessor):
                 else:
                     print("Landmark captured successfully")
                     
-                alignFace_status, final_align_face, align_toast=obj.align_face(tobe_align_face, left_eye_landmark, right_eye_landmark)
+                alignFace_status, final_align_face, align_toast=obj1.align_face(tobe_align_face, left_eye_landmark, right_eye_landmark)
                 if alignFace_status==False:
                     print("Failed to align face.")
                     cap.release()
@@ -572,16 +483,17 @@ def main(cap, face_preprocessor):
                     return capture_status, preprocessedImage_status, final_align_face
     except Exception as e:
         print(f"[ERROR] in face processing class :{e}")
+        return False, False, None
     finally:
         cap.release()
         cv.destroyAllWindows()
-        print(gResult)
-        print(multipleFaceResult)
+        print(gazeResult['gaze_result'])
+        # print(faceDetectionResult["total_unique_unauthorized_faces"])
 
 if __name__ == "__main__":
     cond, cap, cam_toast = initialize_camera()
-    obj=FacePreprocessing()
-    capture_status, preprocessedImage_status, aligned_image = main(cap, obj)
+    obj1=FacePreprocessing()
+    capture_status, preprocessedImage_status, aligned_image = main(cap, obj1)
     if capture_status==True:
         if preprocessedImage_status==True:
             cv.imwrite("resultImages/final.jpg", aligned_image)

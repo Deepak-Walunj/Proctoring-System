@@ -80,7 +80,7 @@ class ObjectDetectionModule:
         for obj in list(self.previous_objects.keys()):
             if obj not in detected_labels:
                 self.previous_objects[obj] = (self.previous_objects[obj][0], self.previous_objects[obj][1] + 1)  # Increment missing count
-                if self.previous_objects[obj][1] > 20:  # If object disappears for more than 20 frames
+                if self.previous_objects[obj][1] > 10:  # If object disappears for more than 10 frames
                     objects_to_remove.append(obj)
         
         # Remove objects that disappeared too long

@@ -139,17 +139,16 @@ class DatabaseOps:
             return status, toast
 
 if __name__=="__main__":
-    choice=int(input("Enter\n1) for registeration\n2) for verification\n"))
+    choice=int(input("Enter\n1) for registeration\n2) for student image\n3) to view a specific student\n4) to view all students\n5) to delete all students\n6) to delete a student\n7) Check database\n"))
+    dbOps=DatabaseOps()
     match choice:
         case 1:
             name=input("Enter name for registeration: ")
             image=cv.imread("test.jpg")
-            dbOps=DatabaseOps()
             doc_id=dbOps.registerStudent(name, image)
             print(doc_id)
         case 2:
             name=input("Enter the name of the student: ")
-            dbOps=DatabaseOps()
             image, imageStatus, imageToast=dbOps.take_photo_from_database(name)
             print(f"Image status :{imageStatus}")
             print(f"Image toast :{imageToast}")
@@ -157,4 +156,28 @@ if __name__=="__main__":
                 image.show()
             else:   
                 print("Image not found or error occurred.")
-        
+        case 3:
+            name=input("Enter the name of the student: ")
+            status, doc_retrived, toast=dbOps.to_view_specific_student(name)
+            print(toast)
+            if status:
+                print(doc_retrived)
+        case 4:
+            status, all_docs, toast=dbOps.to_view_all_students()
+            print(toast+"\nNames:")
+            if status:
+                for doc in all_docs:
+                    print(doc.get("name", "No name found"))
+        case 5:
+            status, toast=dbOps.to_delete_all_students()
+            print(toast)
+        case 6:
+            name=input("Enter the name of the student to delete: ")
+            status, toast=dbOps.to_delete_a_student(name)
+            print(toast)
+        case 7:
+            dbOps=DatabaseOps()
+            status, toast=dbOps.is_db_NotEmpty()
+            print(toast)
+        case _:
+            print("Invalid choice. Please try again.")

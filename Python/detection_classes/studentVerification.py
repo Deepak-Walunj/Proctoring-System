@@ -43,8 +43,8 @@ class StudentVerification:
         
 if __name__ == "__main__":
     studentVerificationObj=StudentVerification()
-    image1 = r"C:\\Users\\Deepak\\OneDrive\Desktop\\3rd year college Industry project\\Proctoring(Self)\\PYTHON\\testImages\\face1.jpg"
-    image2 = r"C:\\Users\\Deepak\\OneDrive\\Desktop\\3rd year college Industry project\\Proctoring(Self)\\PYTHON\\testImages\\face2.jpg"
+    image1 = r"C:\\Users\\Deepak\\OneDrive\\Desktop\\Proctoring\\Python\\testImages\\face1.jpg"
+    image2 = r"C:\\Users\\Deepak\\OneDrive\\Desktop\\Proctoring\\PYTHON\\testImages\\face2.jpg"
     # img=Image.open(image1)
     # img.show()
     result, verifStatus, verifToast=studentVerificationObj.verifyStudent(image1, image2)
